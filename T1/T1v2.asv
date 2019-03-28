@@ -223,16 +223,9 @@ function [matrizBloques] = separarBloques(vector)
     EoB = 300;
     %Buscar posiciones del 300
     posiciones = find(vector==EoB);
-    count = 1;
-    matrizBloques = [];
-    while (count<=lenght(posiciones))
-        if (count == 1)
-            matrizBloques = [matrizBloques;vector(1:posiciones(count))];
-        else
-            matrizBloques = [matrizBloques;vector(posiciones(count-1):posiciones(count))];
-        end
-        count = count + 1;
-    end 
+    for i = posiciones
+    end
+    
 end
 
 %7.-
