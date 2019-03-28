@@ -217,22 +217,41 @@ function [] = imprimirTamanoComprimido(matCompR,matCompG,matCompB)
 end
 
 %6.-
-function [matrizBloques] = separarBloques(vector)
+function [matrizBloques] = separarBloques(vector,tamanoBloque,hVideo,wVideo)
     %Funcion separa el vector correspondiente a una imagen completamente
     %comprimida en una matriz de vectores correspondientes a los 
     EoB = 300;
     %Buscar posiciones del 300
     posiciones = find(vector==EoB);
     count = 1;
-    matrizBloques = [];
+    matrizBloques = zeros(hVideo*wVideo/(tamanoBloque^2),tamanoBloque^2);
     while (count<=lenght(posiciones))
         if (count == 1)
-            matrizBloques = [matrizBloques;vector(1:posiciones(count))];
+            %%%VER RANGO DE ESTO
+            agregar = vector(1:posiciones(count)-1);
+            matrizBloques(count, 1:length(agregar)) = agregar;
         else
-            matrizBloques = [matrizBloques;vector(posiciones(count-1):posiciones(count))];
+            %%VER RANGO DE ESTO
+            agregar = vector(posiciones(count-1)+1:posiciones(count)-1);
+            matrizBloques(count,1:length(agregar)) = agregar ;
         end
         count = count + 1;
     end 
+end
+
+function [bloque] = descomprimirBloque(vector,tamanoBloque,compMat)
+    %Funcion que para un vector devuelve el bloque original.
+    %Zigzag inverso.
+    matBloqueComprimido = izigzag(vector,tamanoBloque,tamanoBloque);
+    %Multiplicar por la matriz de compresión
+    matBloqueDescomprimido = matBloqueComprimido.*compMat;
+    %Calcular la DCT inversa
+    bloque = idct2(matBloqueDescomprimido);    
+end
+
+function [frame] = descomprimirFrame(vector)
+    %Funcion que descomprima un frame completamente, a partir de un vector
+    %comprimido
 end
 
 %7.-
