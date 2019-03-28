@@ -36,6 +36,8 @@ imprimirTamanoOriginal(framesR)
 imprimirTamanoComprimido(matCompR,matCompG,matCompB);
 
 %6.- Descomprimir.
+[hVideo,wVideo,~] = size(RGOPs);
+test = descomprimirFrameUnCanal(matCompR(1,:),8,hVideo,wVideo,matCompresion);
 
 %7.- Reproducir video original (se guarda).
 framesOriginal = videoOriginal(framesR,framesG,framesB);
@@ -168,6 +170,7 @@ function [secuencia] = comprimirUnFrameUnCanal(frame,dimBloques,matCompresion)
     %Funcion que realice la compresion de un frame de un canal.
     %Normalizar el frame
     normFrame = frame - 128;
+    %normFrame = frame;
     %Dimensiones del frame
     [alto,ancho] = size(normFrame);
     %Obtener secuencia de cada subgrupo.Orden es de izquierda a derecha 
@@ -225,7 +228,7 @@ function [matrizBloques] = separarBloques(vector,tamanoBloque,hVideo,wVideo)
     posiciones = find(vector==EoB);
     count = 1;
     matrizBloques = zeros(hVideo*wVideo/(tamanoBloque^2),tamanoBloque^2);
-    while (count<=lenght(posiciones))
+    while (count<=length(posiciones))
         if (count == 1)
             %%%VER RANGO DE ESTO
             agregar = vector(1:posiciones(count)-1);
@@ -249,9 +252,28 @@ function [bloque] = descomprimirBloque(vector,tamanoBloque,compMat)
     bloque = idct2(matBloqueDescomprimido);    
 end
 
-function [frame] = descomprimirFrame(vector)
+function [frame] = descomprimirFrameUnCanal(vectorFrame,dimBloques,hVideo,wVideo,matCompresion)
     %Funcion que descomprima un frame completamente, a partir de un vector
     %comprimido
+    %Obtener matriz
+    matBloques = separarBloques(vectorFrame,dimBloques,hVideo,wVideo);
+    %Generación de frameVacio
+    frame = zeros(hVideo,wVideo);
+    %Relleno del frame
+    c1 = 1;
+    c2 = 1;
+    c3 = 1;
+    disp(size(matBloques))
+        while (c1 <= hVideo-dimBloques+1)
+            while(c2 <= wVideo-dimBloques+1)
+                %Descomprimir el bloque
+                bloqueDescomprimido = descomprimirBloque(matBloques(c3,:),dimBloques,matCompresion);
+                frame(c1:c1+dimBloques-1,c2:c2+dimBloques-1) = bloqueDescomprimido;
+                c2 = c2 + dimBloques;
+                c3 = c3 + 1;
+            end
+        c1 = c1 + dimBloques;
+        end
 end
 
 %7.-
