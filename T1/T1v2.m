@@ -22,26 +22,26 @@ matCompresion=[16 11 10 16 24 40 51 61;
 %Cortar el video para luego cortarlo en bloques de 8x8.
 [framesR,framesG,framesB] = cortarVideo(framesR,framesG,framesB,16);
 
-%2.-Imprimir la dimension original del video.
-imprimirTamanoOriginal(framesR)
-
-%3.- Generacion de GOPs (I-Frames,B-Frames).
-[RGOPs,GGOPs,BGOPs] = generarGOPs(framesR,framesG,framesB);
-
-%4.-Comprimir los canales. Se genera una matriz de dimensión de gran dimensión 
-%solo para almacenar los datos.
-[matCompR,matCompG,matCompB] = comprimirCanales(RGOPs,GGOPs,BGOPs,8,matCompresion);
-
-%5.-Cálculo de tamano del archivo comprimido.
-imprimirTamanoComprimido(matCompR,matCompG,matCompB);
-
-%6.- Descomprimir.
-[hVideo,wVideo,~] = size(RGOPs);
-test = descomprimirFrameUnCanal(matCompR(1,:),8,hVideo,wVideo,matCompresion);
-
-%7.- Reproducir video original (se guarda).
-framesOriginal = videoOriginal(framesR,framesG,framesB);
-%8.- Reproducir video comprimido.
+% %2.-Imprimir la dimension original del video.
+ imprimirTamanoOriginal(framesR)
+% 
+% %3.- Generacion de GOPs (I-Frames,B-Frames).
+ [RGOPs,GGOPs,BGOPs] = generarGOPs(framesR,framesG,framesB);
+% 
+% %4.-Comprimir los canales. Se genera una matriz de dimensión de gran dimensión 
+% %solo para almacenar los datos.
+% [matCompR,matCompG,matCompB] = comprimirCanales(RGOPs,GGOPs,BGOPs,8,matCompresion);
+% 
+% %5.-Cálculo de tamano del archivo comprimido.
+% imprimirTamanoComprimido(matCompR,matCompG,matCompB);
+% 
+% %6.- Descomprimir.
+% [hVideo,wVideo,~] = size(RGOPs);
+% test = descomprimirFrameUnCanal(matCompR(1,:),8,hVideo,wVideo,matCompresion);
+% 
+% %7.- Reproducir video original (se guarda).
+% framesOriginal = videoOriginal(framesR,framesG,framesB);
+% %8.- Reproducir video comprimido.
 
 %% FUNCIONES.
 
@@ -85,6 +85,9 @@ function [R,G,B] = cortarVideo(R0,G0,B0,dimBloques)
         G = G0(1:nuevoH,1:nuevoW,:);
         B = B0(1:nuevoH,1:nuevoW,:);
     end
+    R = double(R);
+    G = double(G);
+    B = double(B);
 end
 
 %2.-
@@ -119,27 +122,28 @@ while (count<= (nFrames-8))
     nuevoG(:,:,count+4) = ((G(:,:,count) + G(:,:,count+8))/2) - G(:,:,count+4);
     nuevoB(:,:,count+4) = ((B(:,:,count) + B(:,:,count+8))/2) - B(:,:,count+4);
     %Calculo de los B 'intermedios'
-    nuevoR(:,:,count+2) = ((R(:,:,count) + R(:,:,count+4))/2) - R(:,:,count+2);
-    nuevoG(:,:,count+2) = ((G(:,:,count) + G(:,:,count+4))/2) - G(:,:,count+2);
-    nuevoB(:,:,count+2) = ((B(:,:,count) + B(:,:,count+4))/2) - B(:,:,count+2);
-    nuevoR(:,:,count+6) = ((R(:,:,count+4) + R(:,:,count+8))/2) - R(:,:,count+6);
-    nuevoG(:,:,count+6) = ((G(:,:,count+4) + G(:,:,count+8))/2) - G(:,:,count+6);
-    nuevoB(:,:,count+6) = ((B(:,:,count+4) + B(:,:,count+8))/2) - B(:,:,count+6);
+    nuevoR(:,:,count+2) = ((nuevoR(:,:,count) + nuevoR(:,:,count+4))/2) - R(:,:,count+2);
+    nuevoG(:,:,count+2) = ((nuevoG(:,:,count) + nuevoG(:,:,count+4))/2) - G(:,:,count+2);
+    nuevoB(:,:,count+2) = ((nuevoB(:,:,count) + nuevoB(:,:,count+4))/2) - B(:,:,count+2);
+    nuevoR(:,:,count+6) = ((nuevoR(:,:,count+4) + nuevoR(:,:,count+8))/2) - R(:,:,count+6);
+    nuevoG(:,:,count+6) = ((nuevoG(:,:,count+4) + nuevoG(:,:,count+8))/2) - G(:,:,count+6);
+    nuevoB(:,:,count+6) = ((nuevoB(:,:,count+4) + nuevoB(:,:,count+8))/2) - B(:,:,count+6);
     %Calculo de los B Restantes 
-    nuevoR(:,:,count+1) = ((R(:,:,count) + R(:,:,count+2))/2) - R(:,:,count+1);
-    nuevoG(:,:,count+1) = ((G(:,:,count) + G(:,:,count+2))/2) - G(:,:,count+1);
-    nuevoB(:,:,count+1) = ((B(:,:,count) + B(:,:,count+2))/2) - B(:,:,count+1);
-    nuevoR(:,:,count+3) = ((R(:,:,count+2) + R(:,:,count+4))/2) - R(:,:,count+3);
-    nuevoG(:,:,count+3) = ((G(:,:,count+2) + G(:,:,count+4))/2) - G(:,:,count+3);
-    nuevoB(:,:,count+3) = ((B(:,:,count+2) + B(:,:,count+4))/2) - B(:,:,count+3);
-    nuevoR(:,:,count+5) = ((R(:,:,count+4) + R(:,:,count+6))/2) - R(:,:,count+5);
-    nuevoG(:,:,count+5) = ((G(:,:,count+4) + G(:,:,count+6))/2) - G(:,:,count+5);
-    nuevoB(:,:,count+5) = ((B(:,:,count+4) + B(:,:,count+6))/2) - B(:,:,count+5);
-    nuevoR(:,:,count+7) = ((R(:,:,count+6) + R(:,:,count+8))/2) - R(:,:,count+7);
-    nuevoG(:,:,count+7) = ((G(:,:,count+6) + G(:,:,count+8))/2) - G(:,:,count+7);
-    nuevoB(:,:,count+7) = ((B(:,:,count+6) + B(:,:,count+8))/2) - B(:,:,count+7);
+    nuevoR(:,:,count+1) = ((nuevoR(:,:,count) + nuevoR(:,:,count+2))/2) - R(:,:,count+1);
+    nuevoG(:,:,count+1) = ((nuevoG(:,:,count) + nuevoG(:,:,count+2))/2) - G(:,:,count+1);
+    nuevoB(:,:,count+1) = ((nuevoB(:,:,count) + nuevoB(:,:,count+2))/2) - B(:,:,count+1);
+    nuevoR(:,:,count+3) = ((nuevoR(:,:,count+2) + nuevoR(:,:,count+4))/2) - R(:,:,count+3);
+    nuevoG(:,:,count+3) = ((nuevoG(:,:,count+2) + nuevoG(:,:,count+4))/2) - G(:,:,count+3);
+    nuevoB(:,:,count+3) = ((nuevoB(:,:,count+2) + nuevoB(:,:,count+4))/2) - B(:,:,count+3);
+    nuevoR(:,:,count+5) = ((nuevoR(:,:,count+4) + nuevoR(:,:,count+6))/2) - R(:,:,count+5);
+    nuevoG(:,:,count+5) = ((nuevoG(:,:,count+4) + nuevoG(:,:,count+6))/2) - G(:,:,count+5);
+    nuevoB(:,:,count+5) = ((nuevoB(:,:,count+4) + nuevoB(:,:,count+6))/2) - B(:,:,count+5);
+    nuevoR(:,:,count+7) = ((nuevoR(:,:,count+6) + nuevoR(:,:,count+8))/2) - R(:,:,count+7);
+    nuevoG(:,:,count+7) = ((nuevoG(:,:,count+6) + nuevoG(:,:,count+8))/2) - G(:,:,count+7);
+    nuevoB(:,:,count+7) = ((nuevoB(:,:,count+6) + nuevoB(:,:,count+8))/2) - B(:,:,count+7);
     count = count + 9;
 end
+disp('GOP generados');
 end
 
 %4.-
@@ -249,7 +253,8 @@ function [bloque] = descomprimirBloque(vector,tamanoBloque,compMat)
     %Multiplicar por la matriz de compresión
     matBloqueDescomprimido = matBloqueComprimido.*compMat;
     %Calcular la DCT inversa
-    bloque = idct2(matBloqueDescomprimido);    
+    bloque = idct2(matBloqueDescomprimido);
+    bloque = bloque + 128;
 end
 
 function [frame] = descomprimirFrameUnCanal(vectorFrame,dimBloques,hVideo,wVideo,matCompresion)
