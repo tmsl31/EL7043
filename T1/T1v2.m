@@ -34,15 +34,17 @@ matCompresion=[16 11 10 16 24 40 51 61;
  [matCompR,matCompG,matCompB] = comprimirCanales(RGOPs,GGOPs,BGOPs,8,matCompresion);
 % 
 % %5.-Cálculo de tamano del archivo comprimido.
-% imprimirTamanoComprimido(matCompR,matCompG,matCompB);
+ imprimirTamanoComprimido(matCompR,matCompG,matCompB);
 % 
 % %6.- Descomprimir.
  [hVideo,wVideo,~] = size(RGOPs);
- test = descomprimirFrameUnCanal(matCompR(1,:),8,hVideo,wVideo,matCompresion);
+[RDesc,GDesc,BDesc] = descomprimirVideo(matCompR,matCompG,matCompB,8,hVideo,wVideo,matCompresion);
+
+% 7.-Reconstruir video a partir de los B frames.
 % 
-% %7.- Reproducir video original (se guarda).
+% %8.- Reproducir video original (se guarda).
 % framesOriginal = videoOriginal(framesR,framesG,framesB);
-% %8.- Reproducir video comprimido.
+% %9.- Reproducir video comprimido.
 
 %% FUNCIONES.
 
@@ -267,9 +269,7 @@ function [frame] = descomprimirFrameUnCanal(vectorFrame,dimBloques,hVideo,wVideo
     frame = zeros(hVideo,wVideo);
     %Relleno del frame
     c1 = 1;
-
     c3 = 1;
-    disp(size(matBloques))
         while (c1 <= hVideo-dimBloques+1)
             c2 = 1;
             while(c2 <= wVideo-dimBloques+1)
@@ -283,7 +283,31 @@ function [frame] = descomprimirFrameUnCanal(vectorFrame,dimBloques,hVideo,wVideo
         end
 end
 
-%7.-
+function [framesCanal] = descomprimirCanal(matComprimida,dimBloques,hVideo,wVideo,matCompresion)
+%Funcion que descomprime todo un canal a partir de la matriz comprimida.
+%Cálculo de número de frames
+[numeroFrames,~] = size(matComprimida);
+framesCanal = zeros(hVideo,wVideo,numeroFrames);
+%Descomprimir cada frame
+for i = 1:1:numeroFrames
+    vectorFrame = matComprimida(i,:);
+    frame =  descomprimirFrameUnCanal(vectorFrame,dimBloques,hVideo,wVideo,matCompresion);
+    framesCanal(:,:,i) = frame;
+end
+end
+
+function [RDesc,GDesc,BDesc] = descomprimirVideo(RComp,GComp,BComp,dimBloques,hVideo,wVideo,matCompresion)
+%Funcion que descomprima simultaneamente las tres matrices.
+RDesc = descomprimirCanal(RComp,dimBloques,hVideo,wVideo,matCompresion);
+GDesc = descomprimirCanal(GComp,dimBloques,hVideo,wVideo,matCompresion);
+BDesc = descomprimirCanal(BComp,dimBloques,hVideo,wVideo,matCompresion);
+disp('Descompresion lista')
+end
+
+%7.- 
+
+
+%8.-
 function [framesOriginal] = videoOriginal(R,G,B)
     %Dimensiones
     [alto,ancho,nFrames] = size(R);
@@ -302,4 +326,4 @@ function [framesOriginal] = videoOriginal(R,G,B)
     close(vidOr)
 end
 
-%8.-
+%9.-
