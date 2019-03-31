@@ -1,7 +1,7 @@
 %Tarea 1.
 %Redes de Acceso Banda Ancha
 %Tomás Lara A.
-clear
+
 
 %% SCRIPT
 
@@ -22,29 +22,32 @@ matCompresion=[16 11 10 16 24 40 51 61;
 %Cortar el video para luego cortarlo en bloques de 8x8.
 [framesR,framesG,framesB] = cortarVideo(framesR,framesG,framesB,16);
 
-% %2.-Imprimir la dimension original del video.
- imprimirTamanoOriginal(framesR)
-% 
-% %3.- Generacion de GOPs (I-Frames,B-Frames).
- [RGOPs,GGOPs,BGOPs] = generarGOPs(framesR,framesG,framesB);
-
-% 
-% %4.-Comprimir los canales. Se genera una matriz de dimensión de gran dimensión 
-% %solo para almacenar los datos.
- [matCompR,matCompG,matCompB] = comprimirCanales(RGOPs,GGOPs,BGOPs,8,matCompresion);
-% 
+%2.-Imprimir la dimension original del video.
+largoOriginal = imprimirTamanoOriginal(framesR);
+ 
+%3.- Generacion de GOPs (I-Frames,B-Frames).
+[RGOPs,GGOPs,BGOPs] = generarGOPs(framesR,framesG,framesB);
+ 
+%4.-Comprimir los canales. Se genera una matriz de dimensión de gran dimensión 
+%solo para almacenar los datos.
+[matCompR,matCompG,matCompB] = comprimirCanales(RGOPs,GGOPs,BGOPs,8,matCompresion);
+ 
 % %5.-Cálculo de tamano del archivo comprimido.
- imprimirTamanoComprimido(matCompR,matCompG,matCompB);
-% 
-% %6.- Descomprimir.
- [hVideo,wVideo,~] = size(RGOPs);
+largoComprimido =  imprimirTamanoComprimido(matCompR,matCompG,matCompB);
+%Porcentaje de compresion
+porcentajeCompresion = 100-largoComprimido/largoOriginal*100;
+disp(strcat('Porcentaje de Compresion: ',string(porcentajeCompresion)))
+%6.- Descomprimir.
+[hVideo,wVideo,~] = size(RGOPs);
 [RDesc,GDesc,BDesc] = descomprimirVideo(matCompR,matCompG,matCompB,8,hVideo,wVideo,matCompresion);
 
 % 7.-Reconstruir video a partir de los B frames.
-% 
-% %8.- Reproducir video original (se guarda).
-% framesOriginal = videoOriginal(framesR,framesG,framesB);
-% %9.- Reproducir video comprimido.
+[R,G,B] = reconstruccionCanales(RDesc,GDesc,BDesc);
+ 
+%8.- Reproducir video original (se guarda).
+framesOriginal = videoOriginal(framesR,framesG,framesB);
+%9.- Reproducir video comprimido.
+videoDescomprimido = repComprimido(R,G,B);
 
 %% FUNCIONES.
 
@@ -94,7 +97,7 @@ function [R,G,B] = cortarVideo(R0,G0,B0,dimBloques)
 end
 
 %2.-
-function [] = imprimirTamanoOriginal(R)
+function [pesoVideo] = imprimirTamanoOriginal(R)
     [alto,ancho,nFrames] = size(R);
     %Peso un frame
     pesoUnFrame = alto*ancho*8*3;
@@ -215,7 +218,7 @@ function [matR,matG,matB] = comprimirCanales (R,G,B,dimBloques,matCompresion)
 end
 
 %5.-
-function [] = imprimirTamanoComprimido(matCompR,matCompG,matCompB)
+function [pesoVideo] = imprimirTamanoComprimido(matCompR,matCompG,matCompB)
     elementosR = sum(sum(matCompR~=0));
     elementosG = sum(sum(matCompG~=0));
     elementosB = sum(sum(matCompB~=0));
@@ -305,25 +308,69 @@ disp('Descompresion lista')
 end
 
 %7.- 
+function [frames] = reconstruccionUnCanal(canal)
+%Funcion que realice la reconstrucción de imágenes a través de los I
+%frames.
+%Dimensiones
+[alto,ancho,nFrames] = size(canal);
+%Arreglo
+frames = zeros(alto,ancho,nFrames);
+%
+for i = 1:9:nFrames-8
+    %I Frames
+    frames(:,:,i) = canal(:,:,i);
+    frames(:,:,i+8) = canal(:,:,i+8);
+    %Central
+    frames(:,:,i+4) = ((frames(:,:,i)+frames(:,:,i+8))/2) - canal(:,:,i+4);
+    %medios
+    frames(:,:,i+2) = ((frames(:,:,i) + frames(:,:,i+4))/2) - canal(:,:,i+2);
+    frames(:,:,i+6) = ((frames(:,:,i+8) + frames(:,:,i+4))/2) - canal(:,:,i+6);
+    %ultimos
+    frames(:,:,i+1) = (frames(:,:,i)+frames(:,:,i+2))/2-canal(:,:,i+1);
+    frames(:,:,i+3) = (frames(:,:,i+2)+frames(:,:,i+4))/2-canal(:,:,i+3);
+    frames(:,:,i+5) = (frames(:,:,i+4)+frames(:,:,i+6))/2-canal(:,:,i+5);
+    frames(:,:,i+7) = (frames(:,:,i+6)+frames(:,:,i+8))/2-canal(:,:,i+7);
+end
+frames = uint8(frames);
+end
 
+function [R,G,B] = reconstruccionCanales(canalR,canalG,canalB)
+    disp('Reconstruyendo frames a partir de GOPs')
+    R = reconstruccionUnCanal(canalR);
+    G = reconstruccionUnCanal(canalG);
+    B = reconstruccionUnCanal(canalB);
+end
 
 %8.-
-function [framesOriginal] = videoOriginal(R,G,B)
-    %Dimensiones
-    [alto,ancho,nFrames] = size(R);
-    %Constituir y almacenar frames
-    framesOriginal = uint8(zeros(alto,ancho,nFrames));
-    RGB = uint8(zeros(alto,ancho,3));
-    vidOr = VideoWriter('newConejo');
-    open(vidOr)
-    for i = 1:1:nFrames
-        RGB(:,:,1) = uint8(R(:,:,i));
-        RGB(:,:,2) = uint8(G(:,:,i));
-        RGB(:,:,3) = uint8(B(:,:,i));
-        unFrame = im2frame(RGB);
-        writeVideo(vidOr,unFrame);
-    end
-    close(vidOr)
+function [video] = videoOriginal(R,G,B)
+%Reproducción de la reconstrucción del video comprimido.
+
+%Dimensiones video
+[alto,ancho,nFrames] = size(R);
+%Generar matriz de frames
+video = zeros(alto,ancho,3,nFrames);
+for i = 1:1:nFrames
+video(:,:,1,i) = R(:,:,i);
+video(:,:,2,i) = G(:,:,i);
+video(:,:,3,i) = B(:,:,i);
+end
+%Reproducir
+implay(uint8(video))
 end
 
 %9.-
+function [video] = repComprimido(R,G,B)
+%Reproducción de la reconstrucción del video comprimido.
+
+%Dimensiones video
+[alto,ancho,nFrames] = size(R);
+%Generar matriz de frames
+video = zeros(alto,ancho,3,nFrames);
+for i = 1:1:nFrames
+video(:,:,1,i) = R(:,:,i);
+video(:,:,2,i) = G(:,:,i);
+video(:,:,3,i) = B(:,:,i);
+end
+%Reproducir
+implay(uint8(video))
+end
