@@ -27,17 +27,18 @@ matCompresion=[16 11 10 16 24 40 51 61;
 % 
 % %3.- Generacion de GOPs (I-Frames,B-Frames).
  [RGOPs,GGOPs,BGOPs] = generarGOPs(framesR,framesG,framesB);
+
 % 
 % %4.-Comprimir los canales. Se genera una matriz de dimensión de gran dimensión 
 % %solo para almacenar los datos.
-% [matCompR,matCompG,matCompB] = comprimirCanales(RGOPs,GGOPs,BGOPs,8,matCompresion);
+ [matCompR,matCompG,matCompB] = comprimirCanales(RGOPs,GGOPs,BGOPs,8,matCompresion);
 % 
 % %5.-Cálculo de tamano del archivo comprimido.
 % imprimirTamanoComprimido(matCompR,matCompG,matCompB);
 % 
 % %6.- Descomprimir.
-% [hVideo,wVideo,~] = size(RGOPs);
-% test = descomprimirFrameUnCanal(matCompR(1,:),8,hVideo,wVideo,matCompresion);
+ [hVideo,wVideo,~] = size(RGOPs);
+ test = descomprimirFrameUnCanal(matCompR(1,:),8,hVideo,wVideo,matCompresion);
 % 
 % %7.- Reproducir video original (se guarda).
 % framesOriginal = videoOriginal(framesR,framesG,framesB);
@@ -152,39 +153,37 @@ end
 function [secuencia] = compresionBloque(bloque,matCompresion)
     %Dimensiones del bloque
     [alto,ancho] = size(bloque);
-    %Bloque ya se encuentra normalizado.
-    %
+    %Normalizar Bloque.
+    bloque = bloque - 128;
     %Calcular la DCT
     bloqueDCT = dct2(bloque,alto,ancho);
     %Pasar por matriz de compresion
     bloqueComp = bloqueDCT./matCompresion;
     %Redondear 
-    bloqueComp = floor(bloqueComp);
+    bloqueComp = round(bloqueComp);
     %Serie.
     serieConCeros = zigzag(bloqueComp);
     %Quitar elementos y Agregar EoB.
     [~,maxPos] = max(serieConCeros==0);
-    secuencia = zeros(1,maxPos+1);
-    secuencia(1,1:maxPos) = serieConCeros(1,1:maxPos);
+    secuencia = zeros(1,maxPos);
+    secuencia(1,1:maxPos-1) = serieConCeros(1,1:maxPos-1);
     %Agregar EoB = 300.
-    secuencia(1,maxPos+1) = 300;
+    secuencia(1,maxPos) = 300;
 end
 
+%Se ve bien.
 function [secuencia] = comprimirUnFrameUnCanal(frame,dimBloques,matCompresion)
     %Funcion que realice la compresion de un frame de un canal.
-    %Normalizar el frame
-    normFrame = frame - 128;
-    %normFrame = frame;
     %Dimensiones del frame
-    [alto,ancho] = size(normFrame);
+    [alto,ancho] = size(frame);
     %Obtener secuencia de cada subgrupo.Orden es de izquierda a derecha 
     %luego bajando por la matriz.
     c1 = 1; 
-    c2 = 1;
     secuencia = [];
     while (c1 <= alto-dimBloques+1)
+        c2 = 1;
         while(c2 <= ancho-dimBloques+1)
-            secuenciaBloque = compresionBloque(normFrame(c1:c1+dimBloques-1,c2:c2+dimBloques-1),matCompresion);
+            secuenciaBloque = compresionBloque(frame(c1:c1+dimBloques-1,c2:c2+dimBloques-1),matCompresion);
             secuencia = [secuencia,secuenciaBloque];
             c2 = c2 + dimBloques;
         end
@@ -197,12 +196,12 @@ function [matSecuencias] = comprimirUnCanal(canal,dimBloques,matCompresion)
     %Dimensiones
     [~,~,numeroFrames] = size(canal);
     %Generación de la matriz. Ancho fijado a través de experimentos.
-    matSecuencias = zeros(numeroFrames,600);
+    matSecuencias = zeros(numeroFrames,5000);
     %Generación de las secuencias.
     for i = 1:1:numeroFrames
         seq = comprimirUnFrameUnCanal(canal(:,:,i),dimBloques,matCompresion);
-        l = length(seq);
-        matSecuencias(i,1:l) = seq;
+        len = length(seq);
+        matSecuencias(i,1:len) = seq;
     end
 end
 
@@ -210,6 +209,7 @@ function [matR,matG,matB] = comprimirCanales (R,G,B,dimBloques,matCompresion)
     matR = comprimirUnCanal(R,dimBloques,matCompresion);
     matG = comprimirUnCanal(G,dimBloques,matCompresion);
     matB = comprimirUnCanal(B,dimBloques,matCompresion);
+    disp('Compresion realizada')
 end
 
 %5.-
@@ -254,6 +254,7 @@ function [bloque] = descomprimirBloque(vector,tamanoBloque,compMat)
     matBloqueDescomprimido = matBloqueComprimido.*compMat;
     %Calcular la DCT inversa
     bloque = idct2(matBloqueDescomprimido);
+    %Descentrar
     bloque = bloque + 128;
 end
 
@@ -266,10 +267,11 @@ function [frame] = descomprimirFrameUnCanal(vectorFrame,dimBloques,hVideo,wVideo
     frame = zeros(hVideo,wVideo);
     %Relleno del frame
     c1 = 1;
-    c2 = 1;
+
     c3 = 1;
     disp(size(matBloques))
         while (c1 <= hVideo-dimBloques+1)
+            c2 = 1;
             while(c2 <= wVideo-dimBloques+1)
                 %Descomprimir el bloque
                 bloqueDescomprimido = descomprimirBloque(matBloques(c3,:),dimBloques,matCompresion);
