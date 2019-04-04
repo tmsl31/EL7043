@@ -17,12 +17,22 @@ tiempoSignal = 5;
 %Para esta parte, se utiliza como SNR inicial el utilizado en el ejemplo de
 %la clase.
 ruido = generarRuidoInicial(signal,71);
+%Calculo de Input SNR.
+SNRInput = SNRSignal(signal,ruido,0);
 %3.- Paso por el amplificador.
 %Valor de Noise Figure (dB)
 NF = 8;
+G = 100;
+nAmplificadores = 10;
 %Paso por la cadena de amplificación
-
-
+[outSignal,outNoise] = cadenaAmplificacion(signal, ruido, G, NF, nAmplificadores);
+%Calculo de Output SNR.
+SNROutput = SNRSignal(outSignal,outNoise,0);
+%4.- Calculo de F equivalente.
+Feq = SNRInput/SNROutput;
+NFeq = 10*log10(Feq);
+disp(Feq)
+disp(NFeq)
 %% FUNCIONES.
 %1.-
 function [signal,t] = signalGeneration(f,A,tTotal)
@@ -100,13 +110,13 @@ function [signal,ruido] = amplificador(sIn,nIn, G, NF)
     ruido = nIn*G + Na;
 end
 
-function [signal,ruido] = cadenaAmplificacion(signalIn, ruidoIn, G, F, NF, nAmplificadores)
+function [signal,ruido] = cadenaAmplificacion(signalIn, ruidoIn, G, NF, nAmplificadores)
     %Funcion que modele una cadena de nAmplificadores, amplificadores, como
     %retorno se entrega la senal y el ruido. en la salida de la cadena.
     if nAmplificadores ==1
         [signal,ruido] = amplificador(signalIn,ruidoIn,G, NF);
     else
-        [s,n] = cadenaAmplificacion(signalIn,ruidoIn,G,F,nAmplificadores-1);
-        [signal,ruido] = amplificador(s,n,G,F,NF);
+        [s,n] = cadenaAmplificacion(signalIn,ruidoIn,G,NF,nAmplificadores-1);
+        [signal,ruido] = amplificador(s,n,G,NF);
     end  
 end
