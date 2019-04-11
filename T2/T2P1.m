@@ -1,11 +1,11 @@
 %Redes de Acceso Banda Ancha
 %Tarea 2.
-%Tom醩 Lara Aravena.
+%Tom谩s Lara Aravena.
 
-%Parte I. Validaci髇 de la ecuaci髇 de Friis.
+%Parte I. Validaci贸n de la ecuaci贸n de Friis.
 
 %% SCRIPT
-%1.- Generaci髇 de se馻l.
+%1.- Generaci贸n de se帽al.
 %Frecuencia tono (Hz).
 f = 500;
 %Amplitud
@@ -24,7 +24,7 @@ SNRInput = SNRSignal(signal,ruido,0);
 NF = 8;
 G = 100;
 nAmplificadores = 10;
-%Paso por la cadena de amplificaci髇
+%Paso por la cadena de amplificaci贸n
 [outSignal,outNoise] = cadenaAmplificacion(signal, ruido, G, NF, nAmplificadores);
 %Calculo de Output SNR.
 SNROutput = SNRSignal(outSignal,outNoise,0);
@@ -36,7 +36,7 @@ disp(NFeq)
 %% FUNCIONES.
 %1.-
 function [signal,t] = signalGeneration(f,A,tTotal)
-    % Funcion que genere las muestras de una se馻l sinusoidal con
+    % Funcion que genere las muestras de una se帽al sinusoidal con
     % frecuencia f y amplitud A
     
     %Frecuencia de muestreo.
@@ -45,7 +45,7 @@ function [signal,t] = signalGeneration(f,A,tTotal)
     ts = 1/fs;
     %Vector de tiempo
     t = 0:ts:tTotal;
-    %Generacion de la se馻l
+    %Generacion de la se帽al
     signal = A*sin(2*pi*t*f);
 end
 
@@ -102,7 +102,7 @@ function [signal,ruido] = amplificador(sIn,nIn, G, NF)
     PSin = var(sIn);
     PNin = var(nIn);
     %Potencia del output referred noise
-    PNa = (PSin*G-PNin*G*F)/(F);
+    PNa = G^2.*PNin.*(F-1);
     %Generacion del ruido de salida del amplificador
     Na = sqrt(PNa) * randn(1,length(sIn));
     %Output Signal
