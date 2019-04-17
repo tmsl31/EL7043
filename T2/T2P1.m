@@ -61,7 +61,16 @@ disp(strcat('Factor de ruido = ',string(Feq)))
 disp(strcat('Figura de ruido [dB] = ',string(NFeq)))
 
 %6.- Cálculo mediante la ecuación de Friis.
-
+%Ganancias
+vectorGananciasdB = 20 * ones(1,nAmplificadores); 
+%Figuras de ruido.
+vectorNF = 8 * ones(1,nAmplificadores);
+%Calculo de la figura de ruido equivalente.
+[FeqFriis,NFeqFriis] = calculadoraFriis(vectorGananciasdB,vectorNF);
+%Impresion en pantalla.
+disp('<<F y NF con ecuación de Friis>>')
+disp(strcat('Factor de ruido = ',string(FeqFriis)))
+disp(strcat('Figura de ruido [dB] = ',string(NFeqFriis)))
 
 %% FUNCIONES.
 %1.-
@@ -155,10 +164,49 @@ end
 function [signal,ruido] = cadenaAmplificacion(signalIn, ruidoIn, GdB, NF, nAmplificadores)
     %Funcion que modele una cadena de nAmplificadores, amplificadores, como
     %retorno se entrega la senal y el ruido. en la salida de la cadena.
-    if nAmplificadores ==1
-        [signal,ruido] = amplificador(signalIn,ruidoIn,GdB, NF);
-    else
-        [s,n] = cadenaAmplificacion(signalIn,ruidoIn,GdB,NF,nAmplificadores-1);
-        [signal,ruido] = amplificador(s,n,GdB,NF);
-    end  
+%     if nAmplificadores ==1
+%         [signal,ruido] = amplificador(signalIn,ruidoIn,GdB, NF);
+%     else
+%         [s,n] = cadenaAmplificacion(signalIn,ruidoIn,GdB,NF,nAmplificadores-1);
+%         [signal,ruido] = amplificador(s,n,GdB,NF);
+%     end
+      count = 1;
+      signal = 0;
+      ruido = 0;
+      while count<=nAmplificadores
+          if count == 1
+              [signal,ruido] = amplificador(signalIn,ruidoIn,GdB,NF);
+          else
+              [signal,ruido] = amplificador(signal,ruido,GdB,NF);
+          end
+          count = count + 1;
+      end
+end
+
+%6.-
+function[Feq,NFeq] = calculadoraFriis(vectorGananciasdB,vectorFdB)
+    %Funcion que dadas las características de n amplificadores calcula la
+    %figura de ruido equivalente de acuerdo a la ecuación de Friis.
+    
+    %Paso a razon.
+    vectorGanancias = 10.^(vectorGananciasdB./10);
+    vectorF = 10.^(vectorFdB./10);
+    %Numero de amplificadores
+    nAmplificadores = length(vectorGanancias);
+    %Calculo
+    count = 1;
+    Feq = 0;
+    while count <= nAmplificadores
+        if count==1
+            %Caso de primer termino
+            Feq = Feq + vectorF(count);
+        else
+        %Terminos con division
+        termino = (vectorF(count)-1)/(prod(vectorGanancias(1:count-1)));
+        Feq = Feq + termino;
+        end
+        count = count + 1;
+    end
+    %Figura de ruido.
+    NFeq = 10*log10(Feq);
 end
