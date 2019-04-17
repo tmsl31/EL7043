@@ -7,11 +7,11 @@ clear
 %% SCRIPT
 %1.- Generacion de senal.
 %Frecuencia tono (Hz).
-f = 500;
+f = 100;
 %Potencia de senal original.
 Ps0 = 12; %dB
 %Tiempo signal (s) 
-tiempoSignal = 100;
+tiempoSignal = 5;
 %Generacion de la senal
 disp('<<Estado Inicial>>')
 [signal,tSignal] = signalGeneration(f,Ps0,tiempoSignal);
@@ -38,7 +38,7 @@ disp(strcat('Potencia Ruido Salida un Amplificador [dB] = ',string(10*log10(var(
 disp(strcat('SNR Salida un Amplificador [dB] = ',string(SNROut1Amplificador)))
 
 %4.- Paso por la cadena de amplificadores.
-nAmplificadores = 10;
+nAmplificadores = 8;
 %Paso por la cadena de amplificacion
 [sOut10, nOut10] = cadenaAmplificacion(signal, ruido, GdB, NF, nAmplificadores);
 %Calculo de Output SNR.
@@ -71,7 +71,25 @@ vectorNF = 8 * ones(1,nAmplificadores);
 disp('<<F y NF con ecuación de Friis>>')
 disp(strcat('Factor de ruido = ',string(FeqFriis)))
 disp(strcat('Figura de ruido [dB] = ',string(NFeqFriis)))
-
+%7.- Ploteo de senales.
+%Senal original.
+hold on
+figure(1)
+plot(tSignal,signal+ruido)
+title('Senal ruidosa original')
+xlabel('Tiempo[s]')
+ylabel('Amplitud [.]')
+xlim([1.0,1.5])
+hold off
+%Senal final.
+hold on
+figure(2)
+plot(tSignal,sOut10+nOut10)
+title('Senal ruidosa final')
+xlabel('Tiempo[s]')
+ylabel('Amplitud [.]')
+xlim([1.0,1.5])
+hold off
 %% FUNCIONES.
 %1.-
 function [signal,t] = signalGeneration(f,PdB,tTotal)
@@ -79,7 +97,7 @@ function [signal,t] = signalGeneration(f,PdB,tTotal)
     % frecuencia f y amplitud A
     
     %Frecuencia de muestreo.
-    fs = 5*f;
+    fs = 10*f;
     %Periodo de muestreo
     ts = 1/fs;
     %Vector de tiempo
