@@ -38,7 +38,7 @@ disp(strcat('Potencia Ruido Salida un Amplificador [dB] = ',string(10*log10(var(
 disp(strcat('SNR Salida un Amplificador [dB] = ',string(SNROut1Amplificador)))
 
 %4.- Paso por la cadena de amplificadores.
-nAmplificadores = 8;
+nAmplificadores = 10;
 %Paso por la cadena de amplificacion
 [sOut10, nOut10] = cadenaAmplificacion(signal, ruido, GdB, NF, nAmplificadores);
 %Calculo de Output SNR.
@@ -85,11 +85,39 @@ hold off
 hold on
 figure(2)
 plot(tSignal,sOut10+nOut10)
-title('Senal ruidosa final')
+title('Senal ruidosa final(10 amplificadores')
 xlabel('Tiempo[s]')
 ylabel('Amplitud [.]')
 xlim([1.0,1.5])
 hold off
+
+%Gráfico de evolución
+[sOut2, nOut2] = cadenaAmplificacion(signal, ruido, GdB, NF, 2);
+[sOut5, nOut5] = cadenaAmplificacion(signal, ruido, GdB, NF, 5);
+[sOut8, nOut8] = cadenaAmplificacion(signal, ruido, GdB, NF, 8);
+
+hold on
+figure(3)
+subplot(2,2,1)
+plot(tSignal,sOut2+nOut2)
+title('Senal ruidos, 2 amplificadores')
+xlim([1.0,1.5])
+
+subplot(2,2,2)
+plot(tSignal,sOut5+nOut5)
+title('Senal ruidos, 5 amplificadores')
+xlim([1.0,1.5])
+
+subplot(2,2,3)
+plot(tSignal,sOut8+nOut8)
+title('Senal ruidos, 8 amplificadores')
+xlim([1.0,1.5])
+
+subplot(2,2,4)
+plot(tSignal,sOut10+nOut10)
+title('Senal ruidos, 10 amplificadores')
+xlim([1.0,1.5])
+
 %% FUNCIONES.
 %1.-
 function [signal,t] = signalGeneration(f,PdB,tTotal)
