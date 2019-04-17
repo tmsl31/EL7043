@@ -20,7 +20,8 @@ disp('<<Estado Inicial>>')
 %la clase.
 ruido = generarRuidoInicial(signal,71);
 % %Calculo de Input SNR.
-SNRInput = SNRSignal(signal,ruido,1);
+SNRInputdB = SNRSignal(signal,ruido,1);
+SNRInput = SNRSignal(signal,ruido,0);
 
 %3.- Paso por el amplificador.
 %Valores de parametros de los amplificadores
@@ -39,16 +40,29 @@ disp(strcat('SNR Salida un Amplificador [dB] = ',string(SNROut1Amplificador)))
 %4.- Paso por la cadena de amplificadores.
 nAmplificadores = 10;
 %Paso por la cadena de amplificacion
-[sOut10, nOut10] = cadenaAmplificacion(signal, ruido, G, NF, nAmplificadores);
+[sOut10, nOut10] = cadenaAmplificacion(signal, ruido, GdB, NF, nAmplificadores);
 %Calculo de Output SNR.
-SNROutput = SNRSignal(sOut10,nOut10,1);
+SNROut10dB = SNRSignal(sOut10,nOut10,1);
+SNROut10 = SNRSignal(sOut10,nOut10,0);
 %Display de la información.
+disp('<<Paso por cadena de 10 amplificadores>>')
+disp(strcat('Potencia Senal Salida [dB]',string(10*log10(var(sOut10)))))
+disp(strcat('Potencia Ruido Salida [dB]',string(10*log10(var(nOut10)))))
+disp(strcat('SNR Salida [dB]',string(SNROut10dB)))
 
-%5.- Calculo de F equivalente.
-% Feq = SNRInput/SNROutput;
-% NFeq = 10*log10(Feq);
-% disp(Feq)
-% disp(NFeq)
+%5.- Calculo de F equivalente, forma experimental.
+%Factor de ruido.
+Feq = SNRInput/SNROut10;
+%Figura de ruido.
+NFeq = 10*log10(Feq);
+%Displays.
+disp('<<F y NF experimental>>')
+disp(strcat('Factor de ruido = ',string(Feq)))
+disp(strcat('Figura de ruido [dB] = ',string(NFeq)))
+
+%6.- Cálculo mediante la ecuación de Friis.
+
+
 %% FUNCIONES.
 %1.-
 function [signal,t] = signalGeneration(f,PdB,tTotal)
@@ -138,13 +152,13 @@ function [signal,ruido] = amplificador(sIn,nIn, GdB, NF)
 end
 
 %4.- 
-function [signal,ruido] = cadenaAmplificacion(signalIn, ruidoIn, G, NF, nAmplificadores)
+function [signal,ruido] = cadenaAmplificacion(signalIn, ruidoIn, GdB, NF, nAmplificadores)
     %Funcion que modele una cadena de nAmplificadores, amplificadores, como
     %retorno se entrega la senal y el ruido. en la salida de la cadena.
     if nAmplificadores ==1
-        [signal,ruido] = amplificador(signalIn,ruidoIn,G, NF);
+        [signal,ruido] = amplificador(signalIn,ruidoIn,GdB, NF);
     else
-        [s,n] = cadenaAmplificacion(signalIn,ruidoIn,G,NF,nAmplificadores-1);
-        [signal,ruido] = amplificador(s,n,G,NF);
+        [s,n] = cadenaAmplificacion(signalIn,ruidoIn,GdB,NF,nAmplificadores-1);
+        [signal,ruido] = amplificador(s,n,GdB,NF);
     end  
 end
