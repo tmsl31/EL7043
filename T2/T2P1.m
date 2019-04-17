@@ -1,42 +1,58 @@
 %Redes de Acceso Banda Ancha
 %Tarea 2.
-%Tom谩s Lara Aravena.
+%Tomas Lara Aravena.
 
-%Parte I. Validaci贸n de la ecuaci贸n de Friis.
-
+%Parte I. Validacion de la ecuacion de Friis.
+clear
 %% SCRIPT
-%1.- Generaci贸n de se帽al.
+%1.- Generacion de senal.
 %Frecuencia tono (Hz).
 f = 500;
-%Amplitud
-A = 1;
+%Potencia de senal original.
+Ps0 = 12; %dB
 %Tiempo signal (s) 
-tiempoSignal = 5;
-[signal,tSignal] = signalGeneration(f,A,tiempoSignal);
+tiempoSignal = 100;
+%Generacion de la senal
+disp('<<Estado Inicial>>')
+[signal,tSignal] = signalGeneration(f,Ps0,tiempoSignal);
 %2.- Generacion del ruido original.
 %Para esta parte, se utiliza como SNR inicial el utilizado en el ejemplo de
 %la clase.
 ruido = generarRuidoInicial(signal,71);
-%Calculo de Input SNR.
-SNRInput = SNRSignal(signal,ruido,0);
+% %Calculo de Input SNR.
+SNRInput = SNRSignal(signal,ruido,1);
+
 %3.- Paso por el amplificador.
-%Valor de Noise Figure (dB)
-NF = 8;
-G = 100;
+%Valores de parametros de los amplificadores
+NF = 8;       %dB
+GdB = 20;     %dB
+%Ejemplo con un amplificador
+disp('<<Paso por un amplificador>>')
+[sOut1Amplificador,nOut1Amplificador] = amplificador(signal,ruido, GdB, NF);
+%Calculo de SNR.
+SNROut1Amplificador = SNRSignal(sOut1Amplificador,nOut1Amplificador,1);
+%Display.
+disp(strcat('Potencia Salida un Amplificador [dB] = ',string(10*log10(var(sOut1Amplificador)))))
+disp(strcat('Potencia Ruido Salida un Amplificador [dB] = ',string(10*log10(var(nOut1Amplificador)))))
+disp(strcat('SNR Salida un Amplificador [dB] = ',string(SNROut1Amplificador)))
+
+%4.- Paso por la cadena de amplificadores.
 nAmplificadores = 10;
-%Paso por la cadena de amplificaci贸n
-[outSignal,outNoise] = cadenaAmplificacion(signal, ruido, G, NF, nAmplificadores);
+%Paso por la cadena de amplificacion
+[sOut10, nOut10] = cadenaAmplificacion(signal, ruido, G, NF, nAmplificadores);
 %Calculo de Output SNR.
-SNROutput = SNRSignal(outSignal,outNoise,0);
-%4.- Calculo de F equivalente.
-Feq = SNRInput/SNROutput;
-NFeq = 10*log10(Feq);
-disp(Feq)
-disp(NFeq)
+SNROutput = SNRSignal(sOut10,nOut10,1);
+%Display de la informaci髇.
+
+%5.- Calculo de F equivalente.
+% Feq = SNRInput/SNROutput;
+% NFeq = 10*log10(Feq);
+% disp(Feq)
+% disp(NFeq)
 %% FUNCIONES.
 %1.-
-function [signal,t] = signalGeneration(f,A,tTotal)
-    % Funcion que genere las muestras de una se帽al sinusoidal con
+function [signal,t] = signalGeneration(f,PdB,tTotal)
+    % Funcion que genere las muestras de una senal sinusoidal con
     % frecuencia f y amplitud A
     
     %Frecuencia de muestreo.
@@ -45,8 +61,12 @@ function [signal,t] = signalGeneration(f,A,tTotal)
     ts = 1/fs;
     %Vector de tiempo
     t = 0:ts:tTotal;
-    %Generacion de la se帽al
-    signal = A*sin(2*pi*t*f);
+    %Potencia en unidades.
+    P = 10^(PdB/10);
+    %Generacion de la senal
+    signal = sin(2*pi*t*f);
+    k = sqrt(P/var(signal));
+    signal = k*signal;
 end
 
 %2.-
@@ -58,21 +78,26 @@ function [ruido] = generarRuidoInicial(signal,SNRdB)
     lSignal = length(signal);
     %Generacion de ruido
     ruido = randn(1,lSignal);
-    %SNR inicial 
+    %SNR inicial [dB]
     SNRInicial = SNRSignal(signal,ruido,1);
-    disp(SNRInicial)
+    %Energia senal
+    energiaSignal = var(signal);
+    energiaSignaldB = 10*log10(energiaSignal);
     %Ajustar potencia de ruido
-    factorAjuste = sqrt(var(signal)/(var(ruido)*10^(SNRdB/10)));
+    factorAjuste = sqrt(energiaSignal/(var(ruido)*10^(SNRdB/10)));
     ruido = factorAjuste*ruido;
+    %Energia del ruido
+    energiaRuido = var(ruido);
+    energiaRuidodB = 10*log10(energiaRuido);
     %Nuevo SNR
     SNR = SNRSignal(signal,ruido,1);
-    disp(SNR)
-    
-end
-
-function [en] = energia(signal)
-    %Funcion que calcule la energia de una signal.
-    en = var(signal);
+    %Display de la informacion inicial.
+    %signal.
+    disp(strcat('Signal Power [dB] = ',string(energiaSignaldB)))
+    %Noise.
+    disp(strcat('Noise Power [dB] = ',string(energiaRuidodB)))
+    %Valor del SNR.
+    disp(strcat('Input SNR [dB] = ',string(SNR)))
 end
 
 function [SNR] = SNRSignal(signal,noise,dB)
@@ -80,8 +105,8 @@ function [SNR] = SNRSignal(signal,noise,dB)
     %posible escoger entre razon y decibeles.
     
     %Energia de las signales.
-    energiaSignal = energia(signal);
-    energiaRuido = energia(noise);
+    energiaSignal = var(signal);
+    energiaRuido = var(noise);
     %SNR en razon.
     SNR = energiaSignal/energiaRuido;
     %Caso en que se quiere en dBmV
@@ -92,7 +117,7 @@ function [SNR] = SNRSignal(signal,noise,dB)
 end
 
 %3.- 
-function [signal,ruido] = amplificador(sIn,nIn, G, NF)
+function [signal,ruido] = amplificador(sIn,nIn, GdB, NF)
     %Funcion que modele un amplificador con una cierta ganancia y una
     %cierta figura de ruido.
     
@@ -101,15 +126,18 @@ function [signal,ruido] = amplificador(sIn,nIn, G, NF)
     %Potencias
     PSin = var(sIn);
     PNin = var(nIn);
+    %Ganancia.
+    G = 10^(GdB/10);
     %Potencia del output referred noise
-    PNa = G^2.*PNin.*(F-1);
+    PNa = G*PNin*(F-1);
     %Generacion del ruido de salida del amplificador
     Na = sqrt(PNa) * randn(1,length(sIn));
     %Output Signal
-    signal = sIn * G;
-    ruido = nIn*G + Na;
+    signal = sIn * sqrt(G);
+    ruido = nIn*sqrt(G) + Na;
 end
 
+%4.- 
 function [signal,ruido] = cadenaAmplificacion(signalIn, ruidoIn, G, NF, nAmplificadores)
     %Funcion que modele una cadena de nAmplificadores, amplificadores, como
     %retorno se entrega la senal y el ruido. en la salida de la cadena.
