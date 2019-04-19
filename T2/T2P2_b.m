@@ -2,63 +2,49 @@
 %Tarea 2.
 %Tomas Lara Aravena.
 
-%Parte 2. Grabación de sonido. Envio primero.
+%Parte 2. Grabación de sonido. Recepcion primero.
 
 %% SCRIPT.
 clear
 %1.- Generacion de senal inicial.
 %Frecuencia tono (Hz).
 f = 300;
-%Frecuencia de muestreso
-fs = 44100;
 %Potencia de senal original.
-Ps0 = 20; %dB
+Ps0 = 12; %dB
 %Tiempo signal (s) 
 tiempoSignal = 3;
 %SNR Inicial [dB] 
 SNRInicial = 60;
-%Generacion de la senal
-[signal,tSignal] = signalGeneration(f,Ps0,tiempoSignal,fs);
-%Generacion del Ruido.
-ruido = generarRuidoInicial(signal,SNRInicial);
-%senal de salida.
-senalTotalInicial = signal + ruido;
-%Plot de la senal original.
-hold on
-figure(1)
-plot(tSignal,senalTotalInicial)
-title('Senal ruidosa original')
-xlabel('Tiempo[s]')
-ylabel('Amplitud [.]')
-xlim([0.5,0.55])
-hold off
-
+%Numero Muestras
+fs = 44100;
+instantes = 0:1/(fs):tiempoSignal;
+numMuestras = length(instantes);
 %2.- Envio y recepcion de signal por el parlante.
 %Enviar senal por parlante.
 %Veces
-veces = [3,5,7,9];
+veces = [4,6,8,10];
 %Matriz que almacene las senales.
-numMuestras = length(tSignal);
 matSenales = zeros(10,numMuestras);
-%Guardar senal original 
-matSenales(1,:) = senalTotalInicial;
-%Ciclo envio recepcion.
-%Primer envio.
-%Envio
-envio(senalTotalInicial,fs);
+%Primera recepcion
+grabacion = recepcion(6,fs);
+cortada = cortarSilencio(grabacion,numMuestras);
+matSenales(2,:) = cortada;
+%Ciclo
 for i = veces
+    %Envio
+    disp('envio')
+    envio(cortada,fs);
+    %Espera
+    pause(1.5)
     %Recepcion
     grabacion = recepcion(6,fs);
     cortada = cortarSilencio(grabacion,numMuestras);
     matSenales(i,:) = cortada;
     %Espera
-    
-    %Envio
-    disp('envio')
-    envio(cortada,fs);
 end
 %% FUNCIONES.
 
+%1.- Generación de la senal de sonido.
 %1.-
 function [signal,t] = signalGeneration(f,PdB,tTotal,fs)
     % Funcion que genere las muestras de una senal sinusoidal con
@@ -99,9 +85,9 @@ function [signal] = recepcion(tGrab,fs)
     %Parametros
     Fs = fs;
     nBits = 24;
-    NumChannels = 1;
+%     NumChannels = 1;
     %Creacion
-    recorder = audiorecorder(Fs,nBits,NumChannels);
+    recorder = audiorecorder(Fs,nBits,1);
     %Grabar.
     disp('Inicio Escucha.'); 
     recordblocking(recorder, tGrab);
