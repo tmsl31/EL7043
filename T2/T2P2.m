@@ -69,6 +69,21 @@ elseif modo == 2
         grabarSonido(numeroMuestra,Fs,nBits,NumChannels,tGrab)  
         numeroMuestra = numeroMuestra + 1;
     end
+    
+    %Calculo de la figura de ruido total experimental.
+    disp('<<Calculo de NF Experimental>>')
+    [FExperimental, NFExperimental] = nfExperimental(nAmplificadores);
+    disp(strcat('F Experimental: ',string(FExperimental)))
+    disp(strcat('NF Experimental: ',string(NFExperimental),'dB'))
+
+    %Calculo de la figura de ruido total por Friis
+    disp('<<Calculo de NF por ecuación de Friis>>')
+    %Obtencion del vector de potencias.
+    disp('Obtencion de las potencias')
+    [vectorPotencias] = obtencionPotencias(nAmplificadores);
+    %Obtencion de las ganancias de los amplificadores.
+    disp('Obtencio de las ganacias de los amplificadores')
+    [vectorGanancias] = obtencionGanancias(vectorPotencias);
 end
 
 
@@ -135,5 +150,59 @@ function [] = grabarSonido(numeroMuestra,Fs,nBits,NumChannels,tGrab)
     audiowrite(filename,senalGrabada,Fs);
 end
 
+function [F, NF] = nfExperimental(nAmplificadores)
+    %Funcion que calcule la figura de ruido asociado a n amplificadores
+    
+    %Primer SNR
+    filenameInicial = 'sonido1.wav';
+    [signalInicial,fsInicial] = audioread(filenameInicial);
+    %SNR Final.
+    filenameInicial = char(strcat('sonido',string(nAmplificadores),'.wav'));
+    [signalFinal,fsFinal] = audioread(filenameInicial);
+    %SNR Inicial
+    snrInicial = snr(signalInicial,fsInicial);
+    snrFinal = snr(signalFinal,fsFinal);
+    %Factor de Ruido
+    F = snrInicial/snrFinal;
+    %Figura de Ruido
+    NF = 10*log10(F);
+end
 
+function [vectorPotencias] = obtencionPotencias(nAmplificadores)
+    %Funcion que muestre los gráficos de modo de poder anotar las ganancias
+    %obtenidas mediante la funcion snr.
+    
+    count = 1;
+    vectorPotencias = zeros(nAmplifadores,1);
+    %Ciclo.
+    while count<nAmplificadores
+        %Nombre de archivo.
+        filename = char(strcat('sonido',string(count),'.wav'));
+        %Lectura del archivo
+        [signal,~] = audioread(filename);
+        %Calculo de SNR. Plot.
+        snr(signal)
+        %Agregar potencia
+        potencia = input('Incluir potencia');
+        %Agregar al vector potencias.
+        vectorPotencias(count,:) = potencia;
+        count = count + 1;
+    end
+end
 
+function [vectorGanancias] = obtencionGanancias(vectorPotencias)
+    %Obtencion de las ganacias de los amplificadores.
+    
+    %Numero de elementos.
+    numeroPotencias = length(vectorPotencias);
+    numeroGanancias = numeroPotencias - 1;
+    %Vector de ganancias
+    vectorGanancias = zeros(numeroGanancias,1);
+    %Ciclo de calculo
+    count = 1;
+    while count < numeroPotencias
+        G = vectorGanancias(count+1)/vectorGanancias(count);
+        vectorGanancias(count) = G;
+        count = count + 1;
+    end
+end
