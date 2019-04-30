@@ -5,118 +5,27 @@
 %Parte I. Validacion de la ecuacion de Friis.
 clear
 %% SCRIPT
-%1.- Generacion de senal.
 %Frecuencia tono (Hz).
 f = 100;
 %Potencia de senal original.
-Ps0 = 12; %dB
+Ps0 = 10; %dB
 %Tiempo signal (s) 
 tiempoSignal = 5;
-%Generacion de la senal
-disp('<<Estado Inicial>>')
-[signal,tSignal] = signalGeneration(f,Ps0,tiempoSignal);
-%2.- Generacion del ruido original.
-%Para esta parte, se utiliza como SNR inicial el utilizado en el ejemplo de
-%la clase.
-ruido = generarRuidoInicial(signal,71);
-% %Calculo de Input SNR.
-SNRInputdB = SNRSignal(signal,ruido,1);
-SNRInput = SNRSignal(signal,ruido,0);
 
-%3.- Paso por el amplificador.
-%Valores de parametros de los amplificadores
-NF = 8;       %dB
-GdB = 20;     %dB
-%Ejemplo con un amplificador
-disp('<<Paso por un amplificador>>')
-[sOut1Amplificador,nOut1Amplificador] = amplificador(signal,ruido, GdB, NF);
-%Calculo de SNR.
-SNROut1Amplificador = SNRSignal(sOut1Amplificador,nOut1Amplificador,1);
-%Display.
-disp(strcat('Potencia Salida un Amplificador [dB] = ',string(10*log10(var(sOut1Amplificador)))))
-disp(strcat('Potencia Ruido Salida un Amplificador [dB] = ',string(10*log10(var(nOut1Amplificador)))))
-disp(strcat('SNR Salida un Amplificador [dB] = ',string(SNROut1Amplificador)))
+%% PRUEBAS
+%Prueba 1.
+%Noise Figure.
+NF1 = 1;
+%Ganancia
+G1 = 10;
+pruebaFriis(f,Ps0,tiempoSignal,NF1,G1)
 
-%4.- Paso por la cadena de amplificadores.
-nAmplificadores = 10;
-%Paso por la cadena de amplificacion
-[sOut10, nOut10] = cadenaAmplificacion(signal, ruido, GdB, NF, nAmplificadores);
-%Calculo de Output SNR.
-SNROut10dB = SNRSignal(sOut10,nOut10,1);
-SNROut10 = SNRSignal(sOut10,nOut10,0);
-%Display de la información.
-disp('<<Paso por cadena de 10 amplificadores>>')
-disp(strcat('Potencia Senal Salida [dB]',string(10*log10(var(sOut10)))))
-disp(strcat('Potencia Ruido Salida [dB]',string(10*log10(var(nOut10)))))
-disp(strcat('SNR Salida [dB]',string(SNROut10dB)))
-
-%5.- Calculo de F equivalente, forma experimental.
-%Factor de ruido.
-Feq = SNRInput/SNROut10;
-%Figura de ruido.
-NFeq = 10*log10(Feq);
-%Displays.
-disp('<<F y NF experimental>>')
-disp(strcat('Factor de ruido = ',string(Feq)))
-disp(strcat('Figura de ruido [dB] = ',string(NFeq)))
-
-%6.- Cálculo mediante la ecuación de Friis.
-%Ganancias
-vectorGananciasdB = 20 * ones(1,nAmplificadores); 
-%Figuras de ruido.
-vectorNF = 8 * ones(1,nAmplificadores);
-%Calculo de la figura de ruido equivalente.
-[FeqFriis,NFeqFriis] = calculadoraFriis(vectorGananciasdB,vectorNF);
-%Impresion en pantalla.
-disp('<<F y NF con ecuación de Friis>>')
-disp(strcat('Factor de ruido = ',string(FeqFriis)))
-disp(strcat('Figura de ruido [dB] = ',string(NFeqFriis)))
-%7.- Ploteo de senales.
-%Senal original.
-hold on
-figure(1)
-plot(tSignal,signal+ruido)
-title('Senal ruidosa original')
-xlabel('Tiempo[s]')
-ylabel('Amplitud [.]')
-xlim([1.0,1.5])
-hold off
-%Senal final.
-hold on
-figure(2)
-plot(tSignal,sOut10+nOut10)
-title('Senal ruidosa final(10 amplificadores')
-xlabel('Tiempo[s]')
-ylabel('Amplitud [.]')
-xlim([1.0,1.5])
-hold off
-
-%Gráfico de evolución
-[sOut2, nOut2] = cadenaAmplificacion(signal, ruido, GdB, NF, 2);
-[sOut5, nOut5] = cadenaAmplificacion(signal, ruido, GdB, NF, 5);
-[sOut8, nOut8] = cadenaAmplificacion(signal, ruido, GdB, NF, 8);
-
-hold on
-figure(3)
-subplot(2,2,1)
-plot(tSignal,sOut2+nOut2)
-title('Senal ruidos, 2 amplificadores')
-xlim([1.0,1.5])
-
-subplot(2,2,2)
-plot(tSignal,sOut5+nOut5)
-title('Senal ruidos, 5 amplificadores')
-xlim([1.0,1.5])
-
-subplot(2,2,3)
-plot(tSignal,sOut8+nOut8)
-title('Senal ruidos, 8 amplificadores')
-xlim([1.0,1.5])
-
-subplot(2,2,4)
-plot(tSignal,sOut10+nOut10)
-title('Senal ruidos, 10 amplificadores')
-xlim([1.0,1.5])
+%Prueba 2.
+%Noise Figure.
+NF1 = 5;
+%Ganancia
+G1 = 10;
+pruebaFriis(f,Ps0,tiempoSignal,NF1,G1)
 
 %% FUNCIONES.
 %1.-
@@ -196,7 +105,8 @@ function [signal,ruido] = amplificador(sIn,nIn, GdB, NF)
     PSin = var(sIn);
     PNin = var(nIn);
     %Ganancia.
-    G = 10^(GdB/10);
+    G = GdB;
+%     G = 10^(GdB/10);
     %Potencia del output referred noise
     PNa = G*PNin*(F-1);
     %Generacion del ruido de salida del amplificador
@@ -255,4 +165,110 @@ function[Feq,NFeq] = calculadoraFriis(vectorGananciasdB,vectorFdB)
     end
     %Figura de ruido.
     NFeq = 10*log10(Feq);
+end
+
+%7.- Funcion que realiza todos los calculos para un conjunto de parametros.
+function [] = pruebaFriis(f,Ps0,tiempoSignal,NF,G)
+    %1.- Generacion de senal.
+    disp('<<Estado Inicial>>')
+    [signal,tSignal] = signalGeneration(f,Ps0,tiempoSignal);
+    %2.- Generacion del ruido original.
+    %Para esta parte, se utiliza como SNR inicial el utilizado en el ejemplo de
+    %la clase.
+    ruido = generarRuidoInicial(signal,40);
+    % %Calculo de Input SNR.
+    SNRInputdB = SNRSignal(signal,ruido,1);
+    SNRInput = SNRSignal(signal,ruido,0);
+
+    %3.- Paso por el amplificador.
+    %Ejemplo con un amplificador
+    disp('<<Paso por un amplificador>>')
+    [sOut1Amplificador,nOut1Amplificador] = amplificador(signal,ruido, G, NF);
+    %Calculo de SNR.
+    SNROut1Amplificador = SNRSignal(sOut1Amplificador,nOut1Amplificador,1);
+    %Display.
+    disp(strcat('Potencia Salida un Amplificador [dB] = ',string(10*log10(var(sOut1Amplificador)))))
+    disp(strcat('Potencia Ruido Salida un Amplificador [dB] = ',string(10*log10(var(nOut1Amplificador)))))
+    disp(strcat('SNR Salida un Amplificador [dB] = ',string(SNROut1Amplificador)))
+
+    %4.- Paso por la cadena de amplificadores.
+    nAmplificadores = 10;
+    %Paso por la cadena de amplificacion
+    [sOut10, nOut10] = cadenaAmplificacion(signal, ruido, G, NF, nAmplificadores);
+    %Calculo de Output SNR.
+    SNROut10dB = SNRSignal(sOut10,nOut10,1);
+    SNROut10 = SNRSignal(sOut10,nOut10,0);
+    %Display de la información.
+    disp('<<Paso por cadena de 10 amplificadores>>')
+    disp(strcat('Potencia Senal Salida [dB]',string(10*log10(var(sOut10)))))
+    disp(strcat('Potencia Ruido Salida [dB]',string(10*log10(var(nOut10)))))
+    disp(strcat('SNR Salida [dB]',string(SNROut10dB)))
+
+    %5.- Calculo de F equivalente, forma experimental.
+    %Factor de ruido.
+    Feq = SNRInput/SNROut10;
+    %Figura de ruido.
+    NFeq = 10*log10(Feq);
+    %Displays.
+    disp('<<F y NF experimental>>')
+    disp(strcat('Factor de ruido = ',string(Feq)))
+    disp(strcat('Figura de ruido [dB] = ',string(NFeq)))
+
+    %6.- Cálculo mediante la ecuación de Friis.
+    %Ganancias
+    vectorGananciasdB = 20 * ones(1,nAmplificadores); 
+    %Figuras de ruido.
+    vectorNF = 8 * ones(1,nAmplificadores);
+    %Calculo de la figura de ruido equivalente.
+    [FeqFriis,NFeqFriis] = calculadoraFriis(vectorGananciasdB,vectorNF);
+    %Impresion en pantalla.
+    disp('<<F y NF con ecuación de Friis>>')
+    disp(strcat('Factor de ruido = ',string(FeqFriis)))
+    disp(strcat('Figura de ruido [dB] = ',string(NFeqFriis)))
+    %7.- Ploteo de senales.
+    %Senal original.
+    hold on
+    figure()
+    plot(tSignal,signal+ruido)
+    title('Senal ruidosa original')
+    xlabel('Tiempo[s]')
+    ylabel('Amplitud [.]')
+    xlim([1.0,1.5])
+    hold off
+    %Senal final.
+    hold on
+    figure()
+    plot(tSignal,sOut10+nOut10)
+    title('Senal ruidosa final(10 amplificadores')
+    xlabel('Tiempo[s]')
+    ylabel('Amplitud [.]')
+    xlim([1.0,1.1])
+    hold off
+
+    %Gráfico de evolución
+    [sOut2, nOut2] = cadenaAmplificacion(signal, ruido, G, NF, 2);
+    [sOut5, nOut5] = cadenaAmplificacion(signal, ruido, G, NF, 5);
+    [sOut8, nOut8] = cadenaAmplificacion(signal, ruido, G, NF, 8);
+
+    hold on
+    figure()
+    subplot(2,2,1)
+    plot(tSignal,sOut2+nOut2)
+    title('Senal ruidos, 2 amplificadores')
+    xlim([1.0,1.04])
+
+    subplot(2,2,2)
+    plot(tSignal,sOut5+nOut5)
+    title('Senal ruidos, 5 amplificadores')
+    xlim([1.0,1.04])
+
+    subplot(2,2,3)
+    plot(tSignal,sOut8+nOut8)
+    title('Senal ruidos, 8 amplificadores')
+    xlim([1.0,1.04])
+
+    subplot(2,2,4)
+    plot(tSignal,sOut10+nOut10)
+    title('Senal ruidos, 10 amplificadores')
+    xlim([1.0,1.04])
 end
