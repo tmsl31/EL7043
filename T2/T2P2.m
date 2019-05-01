@@ -5,9 +5,8 @@
 %Parte 2. Grabación de sonido. Envio primero.
 
 %% SCRIPT.
-clear
 %0.- Definicion del modo en que se utilizara el script
-modo = input('Ingresar modo (0->Inicial;1->Emisor;2->Receptor): ');
+modo = input('Ingresar modo (0->Inicial;1->Emisor;2->Receptor;3-> Procesamiento): ');
 if modo == 0
     %0.- Generacion de senal inicial.
     disp('<<Modo Generacion>>')
@@ -19,7 +18,7 @@ if modo == 0
     %Potencia de senal original.
     Ps0 = 10; %dB
     %Tiempo signal (s) 
-    tiempoSignal = 3;
+    tiempoSignal = 5;
     %SNR Inicial [dB] 
     SNRInicial = 60;
     %Generacion de la senal
@@ -50,6 +49,7 @@ elseif modo == 1
     while numeroMuestra <= 10
         emisionSonido(numeroMuestra);
         numeroMuestra = numeroMuestra + 1;
+        emitirMuestra = input('Emitir Muestra(1):');
     end
     
 elseif modo == 2
@@ -61,16 +61,20 @@ elseif modo == 2
     nBits = 24;
     NumChannels = 1;
     %Tiempo de grabacion
-    tGrab = 5; %segundos
+    tGrab = 8; %segundos
     %Ciclo de grabacion
     numeroMuestra = 2;
+    %Numero de amplificadores
+    nAmplificadores = 10;
     while numeroMuestra <= 10
         disp(strcat('Inicio de Grabacion',string(numeroMuestra)))
         grabarSonido(numeroMuestra,Fs,nBits,NumChannels,tGrab)  
         numeroMuestra = numeroMuestra + 1;
+        grabarMuestra = input('Grabar Muestra(1):');
     end
-    
+elseif modo == 3   
     %Calculo de la figura de ruido total experimental.
+    nAmplificadores = 10;
     disp('<<Calculo de NF Experimental>>')
     [FExperimental, NFExperimental] = nfExperimental(nAmplificadores);
     disp(strcat('F Experimental: ',string(FExperimental)))
@@ -82,8 +86,14 @@ elseif modo == 2
     disp('Obtencion de las potencias')
     [vectorPotencias] = obtencionPotencias(nAmplificadores);
     %Obtencion de las ganancias de los amplificadores.
+    disp('Vector Potencias')
+    disp(vectorPotencias)
     disp('Obtencio de las ganacias de los amplificadores')
     [vectorGanancias] = obtencionGanancias(vectorPotencias);
+    disp('Vector Ganancias')
+    disp(vectorGanancias)
+    %Calculo con la ecuacion de Friis.
+    [vectorF, vectorNF] = figurasRuido(nAmplificadores);
 end
 
 
@@ -129,8 +139,8 @@ function [] = emisionSonido(numeroMuestra)
     %Lectura del archivo de sonido almacenado.
     [signal,fs] = audioread(filename);
     %Emision del sonido a través del parlante
+    disp(strcat('Inicio Emision:',string(numeroMuestra)));
     sound(signal,fs)
-    pause(6);
     disp(strcat('sonido:',string(numeroMuestra),'emitido'));
 end
 
@@ -148,6 +158,7 @@ function [] = grabarSonido(numeroMuestra,Fs,nBits,NumChannels,tGrab)
     disp('Fin Escucha.'); 
     %Guardar nuevo archivo con el nombre correspondiente.
     audiowrite(filename,senalGrabada,Fs);
+
 end
 
 function [F, NF] = nfExperimental(nAmplificadores)
@@ -173,7 +184,7 @@ function [vectorPotencias] = obtencionPotencias(nAmplificadores)
     %obtenidas mediante la funcion snr.
     
     count = 1;
-    vectorPotencias = zeros(nAmplifadores,1);
+    vectorPotencias = zeros(nAmplificadores,1);
     %Ciclo.
     while count<nAmplificadores
         %Nombre de archivo.
@@ -201,8 +212,38 @@ function [vectorGanancias] = obtencionGanancias(vectorPotencias)
     %Ciclo de calculo
     count = 1;
     while count < numeroPotencias
-        G = vectorGanancias(count+1)/vectorGanancias(count);
+        GdB = vectorPotencias(count+1)-vectorPotencias(count);
+        G = 10^(GdB/10);
         vectorGanancias(count) = G;
         count = count + 1;
     end
+end
+
+function [vectorF, vectorNF] = figurasRuido(nAmplificadores)
+    %Funcion que calcule la figura de ruido asociado a n amplificadores
+    
+    %Vector de numeros de amplificador.
+    vectorIndices = 2:1:nAmplificadores;
+    %Calculo de figuras de ruido.
+    vectorF = zeros(nAmplificadores-1,1);
+    vectorNF = zeros(nAmplificadores-1,1);
+    %Calculo de las figuras de ruido.
+    for i = vectorIndices
+        %Nombres de los archivos.
+        filename1 = char(strcat('sonido',string(i-1),'.wav'));
+        filename2 = char(strcat('sonido',string(i),'.wav'));
+        %LecturaArchivos
+        [signal1,fs1] = audioread(filename1);
+        [signal2,fs2] = audioread(filename2);
+        %Calculo de snr
+        snr1 = snr(signal1,fs1);
+        snr2 = snr(signal2,fs2);
+        %Factor de ruido 
+        F = snr1/snr2;
+        %Figura de ruido
+        NF = 10*log10(F);
+        %Agregar a los vectores
+        vectorF(i-1) = F;
+        vectorNF(i-1) = NF;
+    end    
 end
