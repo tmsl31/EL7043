@@ -92,8 +92,10 @@ elseif modo == 3
     [vectorGanancias] = obtencionGanancias(vectorPotencias);
     disp('Vector Ganancias')
     disp(vectorGanancias)
-    %Calculo con la ecuacion de Friis.
+    %Calculo de las figuras de ruido.
     [vectorF, vectorNF] = figurasRuido(nAmplificadores);
+    %Calculo de la ecuacion de Friis.
+    [FeqFriis,NFeqFriis] = calculadoraFriis(vectorG, vectorF);
 end
 
 
@@ -246,4 +248,28 @@ function [vectorF, vectorNF] = figurasRuido(nAmplificadores)
         vectorF(i-1) = F;
         vectorNF(i-1) = NF;
     end    
+end
+
+function[Feq,NFeq] = calculadoraFriis(vectorG, vectorF)
+    %Funcion que dadas las características de n amplificadores calcula la
+    %figura de ruido equivalente de acuerdo a la ecuación de Friis.
+    
+    %Numero de amplificadores
+    nAmplificadores = length(vectorG);
+    %Calculo
+    count = 1;
+    Feq = 0;
+    while count <= nAmplificadores
+        if count==1
+            %Caso de primer termino
+            Feq = Feq + vectorF(count);
+        else
+        %Terminos con division
+        termino = (vectorF(count)-1)/(prod(vectorG(1:count-1)));
+        Feq = Feq + termino;
+        end
+        count = count + 1;
+    end
+    %Figura de ruido.
+    NFeq = 10*log10(Feq);
 end
