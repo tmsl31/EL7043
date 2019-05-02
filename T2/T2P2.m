@@ -6,7 +6,7 @@
 
 %% SCRIPT.
 %0.- Definicion del modo en que se utilizara el script
-modo = input('Ingresar modo (0->Inicial;1->Emisor;2->Receptor;3-> Procesamiento): ');
+modo = input('Ingresar modo (Inicial(0);Emisor(1);Receptor(2);Procesamiento(3);Evaluacion(4)): ');
 if modo == 0
     %0.- Generacion de senal inicial.
     disp('<<Modo Generacion>>')
@@ -84,6 +84,7 @@ elseif modo == 3
     disp('<<Calculo de NF por ecuación de Friis>>')
     %Obtencion del vector de potencias.
     disp('Obtencion de las potencias')
+    disp('Las potencias se deben obtener a mano, envio adjunto a este archivo el workspace donde se encuentran')
     [vectorPotencias] = obtencionPotencias(nAmplificadores);
     %Obtencion de las ganancias de los amplificadores.
     disp('Vector Potencias')
@@ -95,8 +96,31 @@ elseif modo == 3
     %Calculo de las figuras de ruido.
     [vectorF, vectorNF] = figurasRuido(nAmplificadores);
     %Calculo de la ecuacion de Friis.
-    [FeqFriis,NFeqFriis] = calculadoraFriis(vectorG, vectorF);
+    [FeqFriis,NFeqFriis] = calculadoraFriis(vectorGanancias, vectorF);
+    disp(strcat('F Friis: ',string(FeqFriis)))
+    disp(strcat('NF Friis: ',string(NFeqFriis),'dB'))
+elseif modo == 4
+    %Modo evaluacion para no tener que volver a obtener las ganancias y
+    %cargar el workspace.
+    %Limpiar el workspace actual.
+    clear
+    %Cargar el workspace
+    load('workspaceEvaluacion.mat')
+
+    %Calculo de la figura de ruido total experimental.
+    nAmplificadores = 10;
+    disp('<<Calculo de NF Experimental>>')
+    [FExperimental, NFExperimental] = nfExperimental(nAmplificadores);
+    disp(strcat('F Experimental: ',string(FExperimental)))
+    disp(strcat('NF Experimental: ',string(NFExperimental),'dB'))
+
+    %Calculo de la figura de ruido total por Friis
+    disp('<<Calculo de NF por ecuación de Friis>>')
+    [FeqFriis,NFeqFriis] = calculadoraFriis(vectorGanancias, vectorF);
+    disp(strcat('F Friis: ',string(FeqFriis)))
+    disp(strcat('NF Friis: ',string(NFeqFriis),'dB')) 
 end
+
 
 
 %% FUNCIONES.
