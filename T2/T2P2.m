@@ -1,12 +1,11 @@
 %Redes de Acceso Banda Ancha
 %Tarea 2.
 %Tomas Lara Aravena.
-
 %Parte 2. Grabación de sonido. Envio primero.
 
 %% SCRIPT.
 %0.- Definicion del modo en que se utilizara el script
-modo = input('Ingresar modo (Inicial(0);Emisor(1);Receptor(2);Procesamiento(3);Evaluacion(4)):');
+modo = input('Ingresar modo (Inicial(0);Emisor(1);Receptor(2);Procesamiento(3);Evaluacion(4)): ');
 if modo == 0
     %0.- Generacion de senal inicial.
     disp('<<Modo Generacion>>')
@@ -15,20 +14,20 @@ if modo == 0
     f = 500;
     %Frecuencia de muestreso
     fs = 44100;
-    %Amplitud de la senal original
-    amplitud0 = 1;
+    %Potencia de senal original.
+    amplitud = 1;
     %Tiempo signal (s) 
     tiempoSignal = 5;
     %SNR Inicial [dB] 
     SNRInicial = 60;
     %Generacion de la senal
-    [signal,tSignal] = signalGeneration(f,amplitud0,tiempoSignal,fs);
+    [signal,tSignal] = signalGeneration(f,amplitud,tiempoSignal,fs);
     %Generacion del Ruido.
     ruido = generarRuidoInicial(signal,SNRInicial);
     %senal de salida.
     senalTotalInicial = signal + ruido;
     %Display de informacion
-    %disp(strcat('Inicialmente la senal tienen una potencia de: ',string(Ps0),'dB'))
+    disp(strcat('Inicialmente la senal tienen una amplitud de: ',string(amplitud)))
     disp(strcat('Inicialmente la senal tiene un SNR de: ', string(SNRInicial),'dB')) 
     %Plot de la senal original.
     hold on
@@ -40,14 +39,14 @@ if modo == 0
     xlim([0.5,0.55])
     hold off
     %Guardar signal en un achivo .mp4.
-    filename = 'sonido1.mat';
-    audiowrite(filename,'senalTotalInicial','fs');
+    filename = 'sonido1.mp4';
+    audiowrite(filename,senalTotalInicial,fs);
 elseif modo == 1
     %Modo Emisor.
     disp('<<Modo Emision>>')
     numeroMuestra = 1;
     while numeroMuestra <= 10
-        emisionSonido(numeroMuestra,numeroMuestra);
+        emisionSonido(numeroMuestra);
         numeroMuestra = numeroMuestra + 1;
         emitirMuestra = input('Emitir Muestra(1):');
     end
@@ -61,7 +60,7 @@ elseif modo == 2
     nBits = 24;
     NumChannels = 1;
     %Tiempo de grabacion
-    tGrab = 10; %segundos
+    tGrab = 8; %segundos
     %Ciclo de grabacion
     numeroMuestra = 2;
     %Numero de amplificadores
@@ -74,12 +73,11 @@ elseif modo == 2
     end
 elseif modo == 3   
     %Calculo de la figura de ruido total experimental.
-    nAmplificadores = 4;
+    nAmplificadores = 10;
     disp('<<Calculo de NF Experimental>>')
     [FExperimental, NFExperimental] = nfExperimental(nAmplificadores);
     disp(strcat('F Experimental: ',string(FExperimental)))
     disp(strcat('NF Experimental: ',string(NFExperimental),'dB'))
-
     %Calculo de la figura de ruido total por Friis
     disp('<<Calculo de NF por ecuación de Friis>>')
     %Obtencion del vector de potencias.
@@ -135,9 +133,9 @@ function [signal,t] = signalGeneration(f,amplitud,tTotal,fs)
     %Vector de tiempo
     t = 0:ts:tTotal;
     %Generacion de la senal
-    signal = amplitud * sin(2*pi*t*f);
+    signal = sin(2*pi*t*f);
+    signal = amplitud*signal;
 end
-
 function [ruido] = generarRuidoInicial(signal,SNRdB)
     %Funcion que genere ruido AWGN con el fin de poder calcular el SNR
     %inicial. Se entrega el valor de SNR para el inicio
@@ -152,31 +150,23 @@ function [ruido] = generarRuidoInicial(signal,SNRdB)
     factorAjuste = sqrt(energiaSignal/(var(ruido)*10^(SNRdB/10)));
     ruido = factorAjuste*ruido;
 end
-
-function [] = emisionSonido(numeroMuestra,nIter)
+function [] = emisionSonido(numeroMuestra)
     %Emision del sonido para un determinado archivo.
-    fs = 44100;
+    
     %Nombre del archivo.
-    filename = char(strcat('sonido',string(numeroMuestra),'.mat'));
+    filename = char(strcat('sonido',string(numeroMuestra),'.mp4'));
     %Lectura del archivo de sonido almacenado.
-    if(nIter ==1)
-        signal = load(filename);
-        signal = signal.senalTotalInicial;
-    else
-        signal = load(filename);
-        signal = signal.senalGrabada;
-    end
+    [signal,fs] = audioread(filename);
     %Emision del sonido a través del parlante
     disp(strcat('Inicio Emision:',string(numeroMuestra)));
     sound(signal,fs)
     disp(strcat('sonido:',string(numeroMuestra),'emitido'));
 end
-
 function [] = grabarSonido(numeroMuestra,Fs,nBits,NumChannels,tGrab)
     %Emisiion del sonido para un determinado archivo.
     
     %Nombre del archivo.
-    filename = char(strcat('sonido',string(numeroMuestra),'.mat'));
+    filename = char(strcat('sonido',string(numeroMuestra),'.mp4'));
     %Creacion
     recorder = audiorecorder(Fs,nBits,NumChannels);
     %Grabacion del sonido
@@ -185,24 +175,17 @@ function [] = grabarSonido(numeroMuestra,Fs,nBits,NumChannels,tGrab)
     senalGrabada = getaudiodata(recorder);
     disp('Fin Escucha.'); 
     %Guardar nuevo archivo con el nombre correspondiente.
-    audiowrite(filename,'senalGrabada');
-
+    audiowrite(filename,senalGrabada,Fs);
 end
-
 function [F, NF] = nfExperimental(nAmplificadores)
     %Funcion que calcule la figura de ruido asociado a n amplificadores
     
     %Primer SNR
-    filenameInicial = 'sonido1.mat';
-    fsInicial = 44100;
-    signalInicial = load(filenameInicial);
-    signalInicial = signalInicial.senalTotalInicial;
+    filenameInicial = 'sonido1.mp4';
+    [signalInicial,fsInicial] = audioread(filenameInicial);
     %SNR Final.
-    filenameFinal = char(strcat('sonido',string(nAmplificadores),'.mat'));
-    fsFinal = 44100;
-    signalFinal = load(filenameFinal);
-    signalFinal = signalFinal.senalGrabada;
-%     
+    filenameInicial = char(strcat('sonido',string(nAmplificadores),'.mp4'));
+    [signalFinal,fsFinal] = audioread(filenameInicial);
     %SNR Inicial
     snrInicial = snr(signalInicial,fsInicial);
     snrFinal = snr(signalFinal,fsFinal);
@@ -211,7 +194,6 @@ function [F, NF] = nfExperimental(nAmplificadores)
     %Figura de Ruido
     NF = 10*log10(F);
 end
-
 function [vectorPotencias] = obtencionPotencias(nAmplificadores)
     %Funcion que muestre los gráficos de modo de poder anotar las ganancias
     %obtenidas mediante la funcion snr.
@@ -219,18 +201,11 @@ function [vectorPotencias] = obtencionPotencias(nAmplificadores)
     count = 1;
     vectorPotencias = zeros(nAmplificadores,1);
     %Ciclo.
-    while count<=nAmplificadores
+    while count<nAmplificadores
         %Nombre de archivo.
-        filename = char(strcat('sonido',string(count),'.mat'));
+        filename = char(strcat('sonido',string(count),'.mp4'));
         %Lectura del archivo
-        signal = load(filename);
-        if (count == 1)
-            signal = signal.senalTotalInicial;
-        else
-            signal = signal.senalGrabada;
-        end
-        %Filtrado de la senal
-        %signal = ajuste(signal);
+        [signal,~] = audioread(filename);
         %Calculo de SNR. Plot.
         snr(signal)
         %Agregar potencia
@@ -240,7 +215,6 @@ function [vectorPotencias] = obtencionPotencias(nAmplificadores)
         count = count + 1;
     end
 end
-
 function [vectorGanancias] = obtencionGanancias(vectorPotencias)
     %Obtencion de las ganacias de los amplificadores.
     
@@ -258,7 +232,6 @@ function [vectorGanancias] = obtencionGanancias(vectorPotencias)
         count = count + 1;
     end
 end
-
 function [vectorF, vectorNF] = figurasRuido(nAmplificadores)
     %Funcion que calcule la figura de ruido asociado a n amplificadores
     
@@ -270,21 +243,11 @@ function [vectorF, vectorNF] = figurasRuido(nAmplificadores)
     %Calculo de las figuras de ruido.
     for i = vectorIndices
         %Nombres de los archivos.
-        filename1 = char(strcat('sonido',string(i-1),'.mat'));
-        filename2 = char(strcat('sonido',string(i),'.mat'));
+        filename1 = char(strcat('sonido',string(i-1),'.mp4'));
+        filename2 = char(strcat('sonido',string(i),'.mp4'));
         %LecturaArchivos
-        signal1 = load(filename1);
-        signal2 = load(filename2);
-        if (filename1=='sonido1.mat')
-            signal1 = signal1.senalTotalInicial;
-            signal2 = signal2.senalGrabada;
-        elseif (filename2=='sonido1.mat')
-            signal2 = signal2.senalTotalInicial;
-            signal1 = signal1.senalGrabada;
-        else
-            signal1 = signal1.senalGrabada;
-            signal2 = signal2.senalGrabada;            
-        end 
+        [signal1,fs1] = audioread(filename1);
+        [signal2,fs2] = audioread(filename2);
         %Calculo de snr
         snr1 = snr(signal1,fs1);
         snr2 = snr(signal2,fs2);
@@ -297,7 +260,6 @@ function [vectorF, vectorNF] = figurasRuido(nAmplificadores)
         vectorNF(i-1) = NF;
     end    
 end
-
 function[Feq,NFeq] = calculadoraFriis(vectorG, vectorF)
     %Funcion que dadas las características de n amplificadores calcula la
     %figura de ruido equivalente de acuerdo a la ecuación de Friis.
@@ -320,31 +282,4 @@ function[Feq,NFeq] = calculadoraFriis(vectorG, vectorF)
     end
     %Figura de ruido.
     NFeq = 10*log10(Feq);
-end
-
-function yfit = ajuste(y)
-%Función ajuste.
-%y: Datos de la grabación de sonido.
-%Función realiza el corte de la secuencia de sonido, para descartar las
-%muestras iniciales y finales que corresponden a ruuido AWGN.
-
-k=1;
-for i = 1:length(y)     %recorte principio
-   if abs(y(i)) > 0.2  %Si sobrepasa el umbral, 'inicia el sonido'.
-       k = i;
-       break
-   end   
-end
-
-j=1;
-for i = length(y):-1:1  %recorte final
-    if abs(y(i)) > 0.2  %Hasta que muestra se tiene sonido.
-        j=i;
-        break
-    end
-end
-
-%Recorte de la serie.
-yfit = y(k:j);
-
 end
