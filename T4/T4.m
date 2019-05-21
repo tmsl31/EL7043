@@ -10,6 +10,7 @@
 largoCadena = 10;
 [bitsModulados,cadenaBits] = secuenciaQPSK(largoCadena);
 
+%2.- Paralelizacion 
 
 
 
