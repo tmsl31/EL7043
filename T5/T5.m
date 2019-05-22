@@ -17,8 +17,7 @@ coordenadas = graficarBS(lat,long,empresa);
 %3.- Buscar y graficar los vecinos más cercanos.
 disp('<<Dibujar limites.>>')
 %Numero de vecinos.
-K = 4;
-[matLimites] = contornos(puntosBS,K);
+[matLimites] = contornos(puntosBS);
 
 %4.- Realizar el cruce con las antenas en tramite.
 
@@ -106,10 +105,12 @@ function [superMatLimites] = dibujarLimites(vecLat,vecLong,empresa,nPuntos)
 
 end
 
-function[matLimites] = contornos(coordenadas,K)
+function[matLimites] = contornos(coordenadas)
     %Funcion que encuentre todos los contornos.
     matLimites = {};
     
+    %Numero de vecinos
+    K = 1;
     %Numero de coordenadas.
     [nCoord,~] = size(coordenadas);
     %Ciclo.
@@ -131,6 +132,7 @@ function[matLimites] = contornos(coordenadas,K)
         %
         count = count + 1;
     end
+    hold off
     
 
 end
@@ -144,9 +146,24 @@ function [matLimites] = contornoUnaBS(coord0,coord,K)
     %Encontrar los puntos medios entre las coordenadas y los puntos
     %cercanos
     puntosMedios = (valoresCercanos + coord0)./2;
+    %Calculo del radio.
+    r = sqrt((puntosMedios(1)-coord0(1))^2 + (puntosMedios(2)-coord0(2))^2);
     %Dibujar el contorno con los puntos medios.
-    matLimites = puntosMedios;
-    %Plot
-    plot(puntosMedios(:,1),puntosMedios(:,2),'-k')
+    matLimites = circulo(coord0(1),coord0(2),r);
 end
 
+function [matLimites] = circulo(x0,y0,r)
+    %Funcion que dibuje un circule de tal manera que x0 e y0 son las
+    %coordenadas del centro y r es su radio.
+    %Basado en: https://la.mathworks.com/matlabcentral/answers/98665-how-do-i-plot-a-circle-with-a-given-radius-and-center
+    
+    %Vector de angulos
+    theta = 0:pi/50:2*pi;
+    %Valores en cartesianas
+    xUnit = r * cos(theta) + x0;
+    yUnit = r * sin(theta) + y0;
+    %Matriz de puntos.
+    matLimites = [xUnit,yUnit];
+    %Plot de la linea.
+    plot(xUnit, yUnit,'-k');
+end
