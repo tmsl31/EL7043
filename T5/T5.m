@@ -19,9 +19,6 @@ disp('<<Dibujar limites.>>')
 %Numero de vecinos.
 [matLimites] = contornos(puntosBS);
 
-%4.- Realizar el cruce con las antenas en tramite.
-
-
 %% FUNCIONES.
 %1.-
 function [empresa,lat,long] = importarDatos()
@@ -65,6 +62,8 @@ function [arrCoordenadas] = graficarBS(lat,long,empresa)
     
     %Graficar
     hold on
+    S = shaperead('Comuna.shp');
+    mapshow(S)
     count2 = 1;
     while count2 <= numEmpresas
         coordsEmpresa = arrCoordenadas{count2};
