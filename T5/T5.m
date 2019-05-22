@@ -76,43 +76,16 @@ function [arrCoordenadas] = graficarBS(lat,long,empresa)
 %     legend(difEmpresas)
 end
 
-function [superMatLimites] = dibujarLimites(vecLat,vecLong,empresa,nPuntos) 
-    %Funcion que obtenga los limites de las celdas y las dibuje en un
-    %gráfico.
-    
-    %nPuntos -> parametros segun el numero de estaciones base que se elige
-    %para definir el contorno.
-    
-    %Graficar el las estaciones base de acuerdo a operador.
-    graficarBS(vecLat,vecLong,empresa);
-    
-    %Numero de estaciones base
-    [nBS,~] = size(vecLat);
-    %matLimites. Dimensiones.
-    superMatLimites = zeros(nPuntos,2,nBS);
-    
-    %Ciclo.
-    count = 1;
-    while count <= nBS
-        %Obtener los limites y graficar los contornos.
-        matLimites = graficarBS(vecLat,vecLong,empresa);
-        %Agregar a la super matriz
-        superMatLimites(:,:,nBS) = matLimites;
-        %Contador.
-        count = count + 1;
-    end
-    
-
-end
-
 function[matLimites] = contornos(coordenadas)
     %Funcion que encuentre todos los contornos.
-    matLimites = {};
+    
     
     %Numero de vecinos
     K = 1;
     %Numero de coordenadas.
     [nCoord,~] = size(coordenadas);
+    %Matriz de limites de circulos
+    matLimites = zeros(nCoord,3);
     %Ciclo.
     count = 1;
     while count <= nCoord
@@ -126,18 +99,16 @@ function[matLimites] = contornos(coordenadas)
         else
             coord2 = [coordenadas(1:count-1,:);coordenadas(count+1:end,:)];            
         end
-        matUnaCoord = contornoUnaBS(coordenadas(count,:),coord2,K);
+        vecUnCirculo = contornoUnaBS(coordenadas(count,:),coord2,K);
         %Agregar a matLimites.
-        matLimites = {matLimites,matUnaCoord};
+        matLimites(count,:) = vecUnCirculo;
         %
         count = count + 1;
     end
     hold off
-    
-
 end
 
-function [matLimites] = contornoUnaBS(coord0,coord,K)
+function [vecCirculo] = contornoUnaBS(coord0,coord,K)
     %Funcion que dibuje el contorno y obtenga los puntos que definen este.
     %Encontrar los vecinos más cercanos
     indices = knnsearch(coord,coord0,'K',K);
@@ -149,10 +120,10 @@ function [matLimites] = contornoUnaBS(coord0,coord,K)
     %Calculo del radio.
     r = sqrt((puntosMedios(1)-coord0(1))^2 + (puntosMedios(2)-coord0(2))^2);
     %Dibujar el contorno con los puntos medios.
-    matLimites = circulo(coord0(1),coord0(2),r);
+    vecCirculo = circulo(coord0(1),coord0(2),r);
 end
 
-function [matLimites] = circulo(x0,y0,r)
+function [vecCirculo] = circulo(x0,y0,r)
     %Funcion que dibuje un circule de tal manera que x0 e y0 son las
     %coordenadas del centro y r es su radio.
     %Basado en: https://la.mathworks.com/matlabcentral/answers/98665-how-do-i-plot-a-circle-with-a-given-radius-and-center
@@ -163,7 +134,50 @@ function [matLimites] = circulo(x0,y0,r)
     xUnit = r * cos(theta) + x0;
     yUnit = r * sin(theta) + y0;
     %Matriz de puntos.
-    matLimites = [xUnit,yUnit];
+    vecCirculo = [x0,y0,r];
     %Plot de la linea.
     plot(xUnit, yUnit,'-k');
+end
+
+function [puntosDentro,puntosFuera] = cruceDatos(matCirculos,coord2)
+    %Funcion que realice el cruce entre las celdas existentes y los datos
+    %de las antenas solicitadaas.
+    
+    %Numero de antenas solicitadas.
+    [nBSPedidas,~] = size(coord2);
+    %
+    puntosDentro = 0;
+    puntosFuera = 0;
+    %
+    count = 1;
+    while count < nBSPedidas
+        in = inCirculo(matCirculos,coord2(count,:));
+        if(in == 1)
+            puntosDentro = puntosDentro + 1;
+        else
+            puntosFuera = puntosFuera + 1;
+        end
+        count = count + 1;
+    end
+end
+
+function [adentro] = inCirculo(matCirculos,punto)
+    %Funcion que verifica si un punto se encuentra dentro de alguno de los
+    %circulos de la matriz.
+    
+    adentro = 0;
+    %Numero de circulos.
+    [nCirculos,~] = size(matCirculos);
+    %Ciclo de evaluacin
+    count = 1;
+    while count <= nCirculos
+        centros = matCirculos(:,[1,2]);
+        %Distancias
+        d = sqrt((centros(1)-punto(1)).^2+(centros(2)-punto(2))^2);
+        cond = sum(d<matCirculos(:,3));
+        if(cond > 0)
+            adentro = 1;
+        end
+        count = count + 1;
+    end
 end
