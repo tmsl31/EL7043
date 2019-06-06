@@ -6,16 +6,22 @@
 
 
 %% SCRIPT.
-%1.- Modulacion
+%0.- Parametros de simulacion
 largoCadena = 100;
+symPorSubportadora = 10;
+porcentajeCP = 20;
+
+%1.- Modulacion
 [bitsModulados,cadenaBits] = secuenciaQPSK(largoCadena);
 
 %2.- SubPortadoras.
-symPorSubportadora = 10;
 [matSubportadoras] = subportadoras(symPorSubportadora,bitsModulados);
 
 %3.- Aplicacion de la IDFT.
 [portadorasIDFT] = aplicarIDFT(matSubportadoras);
+
+%4.- Agregar CP.
+[inforEnviar] = agregarCP(portadorasIDFT,porcentajeCP);
 %% FUNCIONES.
 %1.- Modulacion
 
@@ -109,4 +115,19 @@ function [matIDFT] = aplicarIDFT(mat)
         count = count + 1;
     end
     
+end
+
+%4.- Cyclic Prefix.
+function [infoEnviar] = agregarCP(matIDF,porcentajeSimbolos)
+    %Funcion que agrega el prefijo ciclico a la matriz de simbolos donde
+    %cada fila representa una subportadora y cada columna un simbolo.
+    
+    %Dimensiones de la matriz IDF.
+    nSimbolos = size(matIDF,2);
+    %Largo del prefijo Ciclico.
+    largoCP = floor(nSimbolos*porcentajeSimbolos/100);
+    %Obtencion de la matriz de prefijos ciclicos.
+    matCP = matIDF(:,nSimbolos-largoCP:nSimbolos);
+    %Concatenar matrices (agregar CP).
+    infoEnviar = [matCP,matIDF];
 end
