@@ -15,7 +15,7 @@ symPorSubportadora = 10;
 [matSubportadoras] = subportadoras(symPorSubportadora,bitsModulados);
 
 %3.- Aplicacion de la IDFT.
-[portadorasIFT] = aplicarIDFT(matSubportadoras);
+[portadorasIDFT] = aplicarIDFT(matSubportadoras);
 %% FUNCIONES.
 %1.- Modulacion
 
@@ -87,7 +87,6 @@ function [matSubportadoras] = subportadoras(nSymSub,bitsModulados)
     count = 1;
     while count <= nSimbolos
        matSubportadoras(count) = bitsModulados(count);
-       disp(matSubportadoras)
        count = count + 1; 
     end
     matSubportadoras = matSubportadoras';
@@ -98,5 +97,16 @@ end
 function [matIDFT] = aplicarIDFT(mat)
     %Funcion que calcula de manera paralela la IDFT para las distintas
     %suportadoras.
+    
+    %Dimensiones.
+    [nFilas,nCols] = size(mat);
+    %Vector que guarde los valores de IDFT.
+    matIDFT = zeros(nFilas,nCols);
+    %Calculo de la IDFT.
+    count = 1;
+    while count <= nCols
+        matIDFT(:,count) = ifft(mat(:,count));
+        count = count + 1;
+    end
     
 end
