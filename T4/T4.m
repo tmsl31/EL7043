@@ -10,6 +10,7 @@
 largoCadena = 100;
 symPorSubportadora = 10;
 porcentajeCP = 20;
+snr = 1;
 
 %1.- Modulacion
 [bitsModulados,cadenaBits] = secuenciaQPSK(largoCadena);
@@ -22,6 +23,9 @@ porcentajeCP = 20;
 
 %4.- Agregar CP.
 [inforEnviar] = agregarCP(portadorasIDFT,porcentajeCP);
+
+%5.- Agregar ruido a la matriz.
+[matRuido] = agregarRuido(inforEnviar,snr);
 %% FUNCIONES.
 %1.- Modulacion
 
@@ -130,4 +134,52 @@ function [infoEnviar] = agregarCP(matIDF,porcentajeSimbolos)
     matCP = matIDF(:,nSimbolos-largoCP:nSimbolos);
     %Concatenar matrices (agregar CP).
     infoEnviar = [matCP,matIDF];
+end
+
+%5.- Sumar Ruido.
+function [dataSerial] = mat2Serial(mat)
+    %Funcion que convierta una matriz en una representacion vectorial.
+    %Serializacion.
+    
+    %Dimensiones de la matriz
+    [fils,cols] = size(mat);
+    %Creacion del vector.
+    dim = fils*cols;
+    dataSerial = zeros(1,dim);
+    %Llenado del vector.
+    count = 1;
+    mat = mat';
+    while count<=dim
+        dataSerial(1,count) = mat(count);
+        count = count + 1;
+    end
+end
+
+function [mat] = serial2Mat(dataSerial,fils,cols)
+    %Funcion que pasa la data desde serial a paralelo con las dimensiones
+    %originales indicadas.
+    
+    %Pasar de la data a matriz.
+    mat = zeros(cols,fils);
+    %Agregar
+    count = 1;
+    for i = dataSerial
+        mat(count) = i;
+        count = count + 1;
+    end
+    mat = mat';
+end
+
+function [matRuido] = agregarRuido(mat,snr)
+    %Funcion que agrega ruido a la matriz. Se agrega ruido con un valor de
+    %SNR definido.
+    
+    %Dimensiones de la matriz.
+    [fils,cols] = size(mat);
+    %Serializar matriz.
+    serial = mat2Serial(mat);
+    %Agregar ruido AWGN.
+    serialRuidoso = awgn(serial,snr);
+    %Pasar a matriz
+    matRuido = serial2Mat(serialRuidoso,fils,cols);
 end
