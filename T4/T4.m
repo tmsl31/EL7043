@@ -7,13 +7,15 @@
 
 %% SCRIPT.
 %1.- Modulacion
-largoCadena = 10;
+largoCadena = 100;
 [bitsModulados,cadenaBits] = secuenciaQPSK(largoCadena);
 
-%2.- Paralelizacion 
+%2.- SubPortadoras.
+symPorSubportadora = 10;
+[matSubportadoras] = subportadoras(symPorSubportadora,bitsModulados);
 
-
-
+%3.- Aplicacion de la IDFT.
+[portadorasIFT] = aplicarIDFT(matSubportadoras);
 %% FUNCIONES.
 %1.- Modulacion
 
@@ -32,7 +34,7 @@ function [bitsModulados] = QPSK(cadenaBits)
     
     %Consideramos  un radio igual a sqrt(2)
     %Codigo Gray en sentido antihorario
-    repComplejas = [1+1i , -1+1i, -1-1i, 1-1i];
+    repComplejas = [0.7+0.7i , -0.7+0.7i, -0.7-0.7i, 0.7-0.7i];
     %Vector que almacene las modulaciones.
     [nBits,~] = size(cadenaBits);
     bitsModulados = zeros(nBits,1);
@@ -67,4 +69,34 @@ function [bits] = generarBits(largoCadena)
     %bits a generar.
     
     bits = randi([0,1],[largoCadena,2]);
+end
+
+%2.- Paso a subportadoras.
+function [matSubportadoras] = subportadoras(nSymSub,bitsModulados)
+    %Funcion que ubique cada uno de los simbolos en cada una de las
+    %subportadoras, considerando un número de simbolos por subportadora.
+    
+    %Calcular el numero de simbolos.
+    nSimbolos = size(bitsModulados,1);
+    %Calcular las dimensiones de matriz necesarias
+    %Numero de subportadoras.
+    nSubportadoras = ceil(nSimbolos/nSymSub);
+    %Creacion de la matriz.
+    matSubportadoras = zeros(nSymSub,nSubportadoras);
+    %Llenado de la matriz.
+    count = 1;
+    while count <= nSimbolos
+       matSubportadoras(count) = bitsModulados(count);
+       disp(matSubportadoras)
+       count = count + 1; 
+    end
+    matSubportadoras = matSubportadoras';
+end
+
+%3.- Aplicar IDFT.
+
+function [matIDFT] = aplicarIDFT(mat)
+    %Funcion que calcula de manera paralela la IDFT para las distintas
+    %suportadoras.
+    
 end
