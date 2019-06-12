@@ -29,8 +29,13 @@ disp('El Angulo maximo se encuentra entre 14 y 15 grados desde la horizontal')
 disp('Para las proximas actividades se utiliza 14 grados desde la horizontal')
 
 %3.- Variacion de Dispersion en funcion de la distancia.
-
+vectorD = linspace(10,10000,100);
+thetaInitGrados = 14;
+dispersiones = variacionDispersion(vectorD,thetaInitGrados);
+%4.- Comparacion con los valores teoricos.
+dispersionesTeo = dispersionesTeoricas(vectorD);
 %% Funciones.
+%1.-
 function [] = variacionN()
     % Variacion de N realiza un grafico de la variacion del indice de
     % refraccion de la fibra optica.
@@ -124,6 +129,10 @@ function [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad)
         theta1 = vecAngulos(count);
         dx = vecX(count) + distanciaRecorrida * cos(theta1);
         dy = vecY(count) + distanciaRecorrida * sin(theta1);
+        if (dx > d)
+            dx = d;
+            dy = ((dx - vecX(count)) / cos(theta1))*sin(theta1) + vecY(count);
+        end
         %Agregar las distancias a los vectores.
         vecX(count + 1) = dx;
         vecY(count + 1) = dy;
@@ -133,6 +142,10 @@ function [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad)
         %Calcular el tiempo y agregar.
         v1 = c/n1;
         t1 = distanciaRecorrida/v1;
+        if (dx == d)
+            t1 = ((dx - vecX(count)) / cos(theta1))/v1;
+        end
+        %Tiempo en ms.
         vecT(count + 1) = t1*1e3 + vecT(count);
         %Calcular nuevo angulo de incidencia.
         deltaY = dy - vecY(count);
@@ -140,6 +153,8 @@ function [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad)
         %seguira derecho Ahorro calculo
         if (dy <=20)    
             theta2 = leySnell(theta1,n1,n2,deltaY);
+        elseif (dy == 0)
+            theta2 = 0;
         else
             theta2 = theta1;            
         end
@@ -179,8 +194,67 @@ function [theta2] = leySnell(theta1,n1,n2,deltaY)
 end
 
 %3.-
-function [] = calculoDispersion(d,thetaInitGrados)
+function [dispersion] = calculoDispersion(d,thetaInitGrados)
     %Funcion que calcule el valor de dispersión temporal entre dos haces.
     
+    [~,~,vecT] = movimientoHaz(d,thetaInitGrados);
+    [~,~,vecT0] = movimientoHaz(d,0);
+    %El rayo curvo va mas rapido, por lo que pongo esto para que de
+    %positivo.
+    dispersion = vecT0(end)-vecT(end);
+end
+
+function [dispersiones] = variacionDispersion(vectorD,thetaInitGrados)
     
+    %Vector que almacene las dispersiones.
+    dispersiones = zeros(size(vectorD));
+    %Ciclo
+    count =1;
+    for d = vectorD
+       dispersiones(count) = calculoDispersion(d,thetaInitGrados);
+       count = count + 1;
+    end
+    %Grafico.
+    figure()
+    hold on
+    plot(vectorD,dispersiones)
+    xlabel('Largo fibra (\mu m)')
+    ylabel('Dispersion (ms)')
+    title('Dispersion en función de la distancia')
+    hold off
+end
+
+%4.- 
+function [dispersion] = dispersionTeorica(d)
+    %Funcion que para una distancia realiza el calculo de la dispersion
+    %teorica.
+
+    %Variables globales.
+    global  nClad nCore c;
+    %Valor de Delta
+    Delta = (nCore - nClad)/nCore;
+    %Dispersion
+    dispersion = (1/8) * ((nCore * d)/c) * Delta.^2;
+end
+
+function [dispersiones] = dispersionesTeoricas(vecD)
+    %Se calcula los valores de dispersion para diferentes valores de
+    %distancia.
+    
+    %Vector que guarde las dispersiones.
+    dispersiones = zeros(size(vecD));
+    %Ciclo.
+    count = 1;
+    for d = vecD
+        dispersiones(count) = dispersionTeorica(d);
+        count = count + 1;
+    end
+    %Grafico
+    figure()
+    hold on
+    plot(vecD,1e3*dispersiones)
+    xlabel('Largo fibra (\mu m)')
+    ylabel('Dispersion (ms)')
+    title('Dispersion teoricas en función de la distancia')
+    hold off
 end
