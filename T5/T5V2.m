@@ -17,7 +17,7 @@ c = 3e8;
 %Longitud de onda
 lambda = c/f;
 %Potencia de tranmision de la antena.
-Pt = 1;
+Pt = 20;
 %Precision.
 precision = 0.0001;
 
@@ -32,13 +32,17 @@ disp('[-33.4832, -33.4954] Lat; [-70.6509, -70.6639] Long con antenas en tramite
 limLat = [-33.4832, -33.4954];
 limLong = [-70.6509, -70.6639];
 %Filtrado de los datos.
-[empresa,coords] = filtrarDatos(empresa,lat,long,limLat,limLong);
-
-%3.- Plot de las calles.
-%plotCalles('map2.osm')
+%[empresa,coords] = filtrarDatos(empresa,lat,long,limLat,limLong);
 
 %4.- 
-[matRadiacion] = calcularPotencias(limLat,limLong,precision,coords);
+disp('Calculando potencias...')
+[X,Y,matRadiacion] = calcularPotencias(limLat,limLong,precision,coords,1);
+hold on
+contourf(X,Y,matRadiacion)
+
+%3.- Plot de las calles.
+disp('Graficando mapa...')
+plotCalles('map2.osm',limLat,limLong)
 
 %% Funciones.
 
@@ -71,27 +75,32 @@ function [empresa2,coords] = filtrarDatos(empresa,lat,long,limLat,limLong)
     nDatos = length(empresa);
     %Ciclo de revision de los datos.
     count = 1;
+    count1 = 1;
     while count <= nDatos
         %Condicion de latitud.
         if ((lat(count)>=limLat(2)) && (lat(count)<=limLat(1)))
             %Condicion de longitud.
             if ((long(count)>=limLong(2)) && (long(count)<=limLong(1)))
-                lat2(count) = lat(count);
-                long2(count) = long(count);
-                empresa2(count) = empresa(count);
+                lat2(count1) = lat(count);
+                long2(count1) = long(count);
+                empresa2(count1) = empresa(count);
+                count1 = count1 + 1;
             end
         end
         count = count + 1;
     end
+    nLong = length(lat2);
+    long2 = reshape(long2,[nLong,1]);
+    lat2 = reshape(lat2,[nLong,1]);
    %Generacion de la estructura de coordenadas.
-   coords = [long2',lat2'];
+   coords = [long2,lat2];
     
 end
 
 %3.- Plot de las calles. Se utiliza codigo entregado por el profesor en
 %material docente del curso.
 
-function [] = plotCalles(filename)
+function [] = plotCalles(filename,limLat,limLong)
     tic
 
     fileID = fopen(filename,'r','n','UTF-8');
@@ -220,9 +229,6 @@ function [] = plotCalles(filename)
 
     W = w;
     P = 0;
-    figure
-    hold on
-
     % Plot streets
     fprintf('Plotting streets...')
     for w = 1:W
@@ -245,12 +251,15 @@ function [] = plotCalles(filename)
                 street_lat(p) = nodes(r,3);
             end
             P = 0;
-            plot(street_lon, street_lat, 'b')
+            plot(street_lon, street_lat, 'g')
             pause(0)
         end
 
     end
     fprintf(' %f\n', toc)
+    %Limites del grafico.
+    ylim([limLat(2),limLat(1)])
+    xlim([limLong(2),limLong(1)])
 end
 
 % Funcion profe.
@@ -268,7 +277,7 @@ end
 end
 
 %4.- Calculo de las potencias.
-function [matRadiacion] = calcularPotencias(limLat,limLong,precision,coords)
+function [X,Y,matRadiacion] = calcularPotencias(limLat,limLong,precision,coords,norm)
     %Funcion que calcule la distribucion de radiacion sobre la zona
     %deseada.
     
@@ -286,6 +295,13 @@ function [matRadiacion] = calcularPotencias(limLat,limLong,precision,coords)
         matRadiacion = matRadiacion + potenciaUnaBS(coords(count,:), X, Y, matPotencias);
         %.
         count = count + 1;
+    end
+    %Normalizar respecto 
+    if (norm==1)
+        %promedio = mean(reshape(matRadiacion,[],1));
+        %desviacion = std(reshape(matRadiacion,[],1));
+        maximo = min(reshape(matRadiacion,[],1));
+        matRadiacion = (matRadiacion/maximo);
     end
 end
 
@@ -370,13 +386,16 @@ function [dist] = distanciaCoordenadas(coord1,coord2)
     lat1 = lat1*pi/180;
     long2 = long2*pi/180;
     lat2 = lat2*pi/180;
+    %Valores positivos.
+    long1 = abs(long1);
+    lat1 = abs(lat1);
+    long2 = abs(long2);
+    lat2 = abs(lat2);
     %Deltas
-    deltaLat = lat2-lat1;
     deltaLong = long2-long1;
     %factorAngulos
-    a=sin((deltaLat)/2)^2 + cos(lat1)*cos(lat2) * sin(deltaLong/2)^2;
-    c=2*atan2(sqrt(a),sqrt(1-a));
+    factor = acos(cos(lat1) * cos(lat2) * cos(deltaLong) + sin(lat1) * sin(lat2));
     %Distancia
-    dist = Rm * c;
+    dist = Rm * factor;
 end
 
