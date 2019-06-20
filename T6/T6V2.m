@@ -39,13 +39,13 @@ dAntenaskm = .1;
 [mathXY,mathXYF] = matRespuestasImpulso(matPersonas,matAntenas);
 
 %3.- Obtencion de la matriz de senales de antena.
-[B1,B2,B3,B4] = obtencionB(mathXYF,rectF,triangF,sinusoideF);
+[b1,b2,b3,b4] = obtencionB(mathXYF,rectF,triangF,sinusoideF);
 %Plot de las senales
-plotSenalesAntenas(B1,B2,B3,B4)
+plotSenalesAntenas(b1,b2,b3,b4)
 
 %4.- Obtencion de las funciones originales.
-
-
+[s1,s2,s3] = obtencionOriginales(b1,b2,b3,b4,mathXY);
+plotOriginales(s1,s2,s3);
 %% Funciones.
 
 %0.- Generar antenas y personas.
@@ -240,3 +240,37 @@ function [] = plotSenalesAntenas(B1,B2,B3,B4)
         ylabel('Amplitud')
         title('Señal B4')
 end
+
+%4.- Obtencion de las funciones originales en las personas.
+function [s1,s2,s3] = obtencionOriginales(b1,b2,b3,b4,mathxy)
+    %Funcion que obtenga las senales originales en las personas a partir de
+    %la matriz de funciones de transferencia y las senales que salen de las
+    %estaciones base.
+    
+    %Obtencion de S1.
+    s1 = conv(b1,mathxy(1,:,1)) + conv(b2,mathxy(2,:,1)) + conv(b3,mathxy(3,:,1)) + conv(b4,mathxy(4,:,1));
+    s2 = conv(b1,mathxy(1,:,2)) + conv(b2,mathxy(2,:,2)) + conv(b3,mathxy(3,:,2)) + conv(b4,mathxy(4,:,2));
+    s3 = conv(b1,mathxy(1,:,3)) + conv(b2,mathxy(2,:,3)) + conv(b3,mathxy(3,:,3)) + conv(b4,mathxy(4,:,3));
+end
+
+function [] = plotOriginales(s1,s2,s3)
+    %Funcion que realiza una grafica de las senales originales.
+    
+    %Punto a fijar la linea.
+    SP=1024;
+    
+    figure()
+    subplot(2,2,1)
+    plot(s1)
+    line([SP SP],[-1 2],'Color',[1 0 0])   
+    
+    subplot(2,2,2)
+    plot(s2)
+    line([SP SP],[-1 2],'Color',[1 0 0])   
+    
+    subplot(2,2,3)
+    plot(s3)
+    line([SP SP],[-1 2],'Color',[1 0 0])   
+    
+end
+
