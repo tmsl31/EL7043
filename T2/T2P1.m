@@ -4,6 +4,7 @@
 
 %Parte I. Validacion de la ecuacion de Friis.
 clear
+clc
 %% SCRIPT
 %Frecuencia tono (Hz).
 f = 100;
@@ -14,6 +15,8 @@ tiempoSignal = 5;
 
 %% PRUEBAS
 %Prueba 1.
+disp('.')
+disp('<<Prueba 1>>')
 %Noise Figure.
 NF1 = 1;
 %Ganancia
@@ -21,12 +24,26 @@ G1 = 10;
 pruebaFriis(f,Ps0,tiempoSignal,NF1,G1)
 
 %Prueba 2.
+disp('.')
+disp('<<Prueba 2>>')
 %Noise Figure.
-NF1 = 5;
+NF2 = 1;
 %Ganancia
-G1 = 10;
-pruebaFriis(f,Ps0,tiempoSignal,NF1,G1)
+G2 = 100;
+pruebaFriis(f,Ps0,tiempoSignal,NF2,G2)
 
+%Prueba 3.
+disp('.')
+disp('<<Prueba 3>>')
+%Noise Figure.
+NF3 = 5;
+%Ganancia
+G3 = 1;
+pruebaFriis(f,Ps0,tiempoSignal,NF3,G3)
+
+disp('Se observa una concordancia aproximada para valores no muy altos de ganancia')
+disp('En caso de alta ganancia la ecuacion de Friis pierde validez pues los terminos asociados a los ultimos amplificadores son despreciables')
+disp('Lo mismo ocurre para alto NF')
 %% FUNCIONES.
 %1.-
 function [signal,t] = signalGeneration(f,PdB,tTotal)
