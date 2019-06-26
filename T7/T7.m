@@ -18,6 +18,8 @@ seqBitsOriginal = [1 0 1 1 0];
 bitsCodificados = codificacionTV(seqBitsOriginal);
 
 %3.- Agregar errores.
+[todasPosibilidades] = posibilidadesError(bitsCodificados);
+
 %% Funciones.
 %1.- Codificacion de una secuencia.
 
@@ -54,7 +56,7 @@ end
 
 function seqBits = generarBits(nBits)
     %Funcion que genera una secuencia aleatoria de bits de largo nBits.
-   
+    
     seqBits = randi([0,1],[nBits,1]);
 end
 
@@ -73,6 +75,7 @@ function registro = actualizarRegistro(registro,input)
     
     %Cambio interno.
     registro(2) = registro (1);
+    %Adicion de nuevo elemento.
     registro(1) = input;
 end
 
@@ -135,7 +138,7 @@ function [bitsXOR] = generarBitsXOR(nBits,nErrores)
     count = 1;
     while count <= nPermutaciones
         permutacion = permutacionesUnicas(count,:);
-        if ~((permutacion(1,nBits) == 0)|| (permutacion(1,nBits-1)))
+        if ((permutacion(1,nBits) ~= 1) && (permutacion(1,nBits-1) ~= 1))
             bitsXOR = [bitsXOR;permutacion];
         end
         count = count + 1;
