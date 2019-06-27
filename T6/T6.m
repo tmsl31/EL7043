@@ -8,15 +8,15 @@ close all
 %% Script
 
 %0.- Generar antenas y personas
-global fs f c lambda dt
+global fs f c lambda dt dAntenaskm
 
 %Parametros.
 %Velocidad de la luz
 c = 3e8;
 %Frecuencia de muestreo
-fs = 1e9;
-%Tiempo entre muestras (1 nanoSegundo).
-dt = 1e-9; 
+fs = 10e9;
+%Tiempo entre muestras.
+dt = 1/fs;
 %Frecuencia de portadora.
 f = 700e6;
 %Longitud de onda.
@@ -27,32 +27,32 @@ dMin = 1;
 usuarios = 3; 
 %km
 dAntenaskm = .1;
-% %Generacion de las matrices.
-disp('Generacion escenario...')
+
+%0.- Generacion de las matrices de posiciones.
 [matAntenas,matPersonas] = escenario(dAntenaskm,dMin,usuarios);
  
-%1.- Generar las funciones en cada persona.
-disp('Generacion senales...')
+%1.- Calculo de las respuestas al impulso.
+[mathXY,mathXYF] = matRespuestasImpulso(matPersonas,matAntenas);
+
+%2.- Generacion de las funciones en las personas.
 [funcionCuadrada, rectF] = funcionRect();
 [funcionTriangular, triangF] = funcionTriangulo();
 [funcionSinusoide, sinusoideF] = funcionSin();
-%Plot senales originales.
-disp('Plot senales originales...')
-plotOriginales(funcionCuadrada,funcionTriangular,funcionSinusoide);
 
-%2.- Generacion de las respuestas al impulso.
-disp('Calcular respuestas al impulso...')
-[mathXY,mathXYF] = matRespuestasImpulso(matPersonas,matAntenas);
+figure()
+hold on
+plot(funcionCuadrada)
+plot(funcionTriangular)
+plot(funcionSinusoide)
+hold off
 
 %3.- Obtencion de la matriz de senales de antena.
-disp('Obtener senales originales...')
 [b1,b2,b3,b4] = obtencionB(mathXYF,rectF,triangF,sinusoideF);
+
 %Plot de las senales
-disp('Graficar senales en bs...')
 plotSenalesAntenas(b1,b2,b3,b4)
 
 %4.- Obtencion de las funciones originales.
-disp('Desplazar senales (reconstruccion)...')
 [s1,s2,s3] = obtencionOriginales(b1,b2,b3,b4,mathXY);
 plotOriginales(s1,s2,s3);
 %% Funciones.
@@ -71,14 +71,112 @@ function[matAntenas,matPersonas] = escenario(distanciaAntenaskm,dMin,usuarios)
     matAntenas = [0,0;0,dAntenasm;dAntenasm,dAntenasm;dAntenasm,0];
     %Posicion de las personas en el arreglo
     matPersonas = randi([dMin,dAntenasm-dMin],usuarios,2);
+    %Plot.
+    figure()
+    hold on
+    %Antenas
+    plot(matAntenas(:,1)',matAntenas(:,2)','*k')
+    %Personas.
+    plot(matPersonas(:,1)',matPersonas(:,2)','+r')
+    title('Distribucion de antenas y receptores.')
+    xlabel('X [m]')
+    ylabel('Y [m]')
+    legend('Antenas','Receptores')
+    
 end
 
-%1.-
+%1.- Calculo de las respuestas al impulso.
+%2.- Generacion de las respuestas la impulso.
+function hXY = respuestaXY(X,Y,X0,Y0,tDiagonal)
+    %Funcion que calcule la respuesta al impulso para la persona ubicada en
+    %las coordenadas X,Y a la antena X0, Y0-
+    
+    global lambda c dt 
+    %Distancia
+    Rxy = sqrt((X-X0)^2+(Y-Y0)^2);
+    %Factor de perdidas.
+    factor = ((lambda)/(4*pi*Rxy))^2;
+    %tau XY (retardo al receptor)
+    tauXY = round(Rxy /(c*dt));
+    %Generar la respuesta al impulso.
+    hXY = zeros(1,tDiagonal);
+    %Agregar el impulso.
+    hXY(tauXY) = factor;
+end
+
+%Generacion de todas las respuestas al impulso.
+function [mathXY,mathXYF] = matRespuestasUnaPersona(posPersona,matAntenas)
+    %Funcion que calcule las matrices de respuesta al impulso para una
+    %persona.
+    
+    %Variables globales.
+    global dAntenaskm c dt
+    %Posicion de la persona.
+    xPersona = posPersona(1);
+    yPersona = posPersona(2);
+    %Numero de antenas
+    nAntenas = size(matAntenas,1);
+    %Tiempo total de la diagonal.
+    tDiagonal = ceil(sqrt(2) * dAntenaskm * 1000/(c*dt));
+    %Matrices de resultados
+    mathXY = zeros(nAntenas,tDiagonal);
+    mathXYF = zeros(nAntenas,tDiagonal);
+    %Matriz de respuesta para las distintas antenas.
+    count = 1;
+    while count <= nAntenas
+        %Coordenadas antena.
+        X0 = matAntenas(count,1);
+        Y0 = matAntenas(count,2);
+        %Respuesta al impulso.
+        res = respuestaXY(xPersona,yPersona,X0,Y0,tDiagonal);
+        %Agregar
+        mathXY(count,:) = res;
+        mathXYF(count,:) = fft(res);
+        %c
+        count = count + 1;
+    end
+end
+
+function [mathXY,mathXYF] = matRespuestasImpulso(matPersonas,matAntenas)
+    %Funcion que entregue la matriz de respuestas al impulso por cada
+    %persona a cada antena.
+    
+    %Variables globales.
+    global dAntenaskm c dt
+    
+    %Tiempo total de la diagonal.
+    tDiagonal = ceil(sqrt(2) * dAntenaskm * 1000/(c*dt));
+    %Dimensiones
+    filsP = size(matPersonas,1);
+    filsA = size(matAntenas,1);
+    %Creacion del arreglo que almacene las respuestas.
+    %Una matriz por persona, donde cada fila es una antena.
+    mathXY = zeros(filsA,tDiagonal,filsP);
+    mathXYF = zeros(filsA,tDiagonal,filsP);
+    %Calculo de las respuesta al impulso.
+    count1 = 1;
+    while count1 <= filsP
+        %Posicion de la persona
+        posPersona = matPersonas(count1,:);
+        %Matriz con respecto a las antenas.
+        [mat,matF] = matRespuestasUnaPersona(posPersona,matAntenas);
+        %Agregar.
+        mathXY(:,:,count1) = mat;
+        mathXYF(:,:,count1) = matF;
+        count1 = count1 + 1;
+    end
+end
+
+%3.- Generacion de las senales en las personas.
 function [cuadrado,cuadradoF] = funcionRect()
     %Funcion que genera una senal cuadrada para uno de los usuarios.
     
+    %Variables globales.
+    global dAntenaskm c dt
+    %Tiempo total de la diagonal.
+    tDiagonal = ceil(sqrt(2) * dAntenaskm * 1000/(c*dt));
     %Generacion de la senal.
-    cuadrado = zeros(1,1024);
+    cuadrado = zeros(1,tDiagonal);
     %Altura del cuadrado.
     alturaCuadrado = 1;
     %Numero de muestras cuadrado.
@@ -92,8 +190,13 @@ end
 function [triangulo,trianguloF] = funcionTriangulo()
     %Funcion que genera una senal Triangular para uno de los usuarios.
     
+    
+    %Variables globales.
+    global dAntenaskm c dt
+    %Tiempo total de la diagonal.
+    tDiagonal = ceil(sqrt(2) * dAntenaskm * 1000/(c*dt));
     %Generacion de la senal.
-    triangulo = zeros(1,1024);
+    triangulo = zeros(1,tDiagonal);
     %Altura del cuadrado.
     alturaTriangulo = 1;
     %Pendientes.
@@ -122,8 +225,13 @@ end
 function [sinusoide,sinusoideF] = funcionSin()
     %Funcion que genera una senal Triangular para uno de los usuarios.
     
+    
+    %Variables globales.
+    global dAntenaskm c dt
+    %Tiempo total de la diagonal.
+    tDiagonal = ceil(sqrt(2) * dAntenaskm * 1000/(c*dt));
     %Generacion de la senal.
-    sinusoide = zeros(1,1024);
+    sinusoide = zeros(1,tDiagonal);
     %Altura del cuadrado.
     count = 256;
     while count <= 768
@@ -134,51 +242,6 @@ function [sinusoide,sinusoideF] = funcionSin()
     sinusoideF = fft(sinusoide);
 end
 
-%2.- Generacion de las respuestas la impulso.
-function hXY = respuestaXY(X,Y,X0,Y0)
-    %Funcion que calcule la respuesta al impulso para la persona ubicada en
-    %las coordenadas X,Y a la antena X0, Y0-
-    
-    global lambda c dt
-    %Distancia
-    Rxy = sqrt((X-X0)^2+(Y-Y0)^2);
-    %Factor de perdidas.
-    factor = ((lambda)/(4*pi*Rxy))^2;
-    %tau XY
-    tauXY = round(Rxy /(c*dt));
-    %Generar la respuesta al impulso.
-    hXY = zeros(1,1024);
-    %Agregar el impulso.
-    hXY(tauXY) = factor;
-end
-
-%Generacion de todas las respuestas al impulso.
-function [mathXY,mathXYF] = matRespuestasImpulso(matPersonas,matAntenas)
-    %Funcion que entregue la matriz de respuestas al impulso por cada
-    %persona a cada antena.
-    
-    %Dimensiones
-    filsP = size(matPersonas,1);
-    filsA = size(matAntenas,1);
-    %Creacion del arreglo que almacene las respuestas.
-    %Una matriz por persona, donde cada fila es una antena.
-    mathXY = zeros(filsA,1024,filsP);
-    mathXYF = zeros(filsA,1024,filsP);
-    %Calculo de las respuesta al impulso.
-    count1 = 1;
-    while (count1 <= filsP)
-        count2 = 1;
-        while (count2 <= filsA)
-            mathXY(count2,:,count1) = respuestaXY(matPersonas(count1,1),matPersonas(count1,2),matAntenas(count2,1),matAntenas(count2,2));
-            mathXYF(count2,:,count1) = fft(mathXY(count2,:,count1));
-            count2 = count2 + 1;
-        end
-        count1 = count1 + 1;
-    end
-    
-
-end
-
 %3.- Obtencion de las senales originales.
 function [B1,B2,B3,B4] = obtencionB(matH,SF1,SF2,SF3)
     %Obtencion de las matrices originales.
@@ -187,15 +250,19 @@ function [B1,B2,B3,B4] = obtencionB(matH,SF1,SF2,SF3)
     %mathH -> Matrices de H.
     %SF1,SF2,SF3 -> Senales en cada persona en Fourier.
     
+    %Variables globales.
+    global dAntenaskm c dt
+    %Tiempo total de la diagonal.
+    tDiagonal = ceil(sqrt(2) * dAntenaskm * 1000/(c*dt));
     %Generacion de arreglos de B.
-    B1 = zeros(1,1024);
-    B2 = zeros(1,1024);
-    B3 = zeros(1,1024);
-    B4 = zeros(1,1024);
+    B1 = zeros(1,tDiagonal);
+    B2 = zeros(1,tDiagonal);
+    B3 = zeros(1,tDiagonal);
+    B4 = zeros(1,tDiagonal);
     
     %Extraer Cada B.
     count = 1;
-    while count<=1024
+    while count<=tDiagonal
         %Obtencion de los valores de la senal.
         SF = [SF1(count);SF2(count);SF3(count)];
         %Obtencion de la matriz H.
@@ -219,18 +286,12 @@ function [B1,B2,B3,B4] = obtencionB(matH,SF1,SF2,SF3)
     B2 = ifft(B2);
     B3 = ifft(B3);
     B4 = ifft(B4);
-    %Separar la parte real e imaginaria.
-    B1 = real(B1);
-    B2 = real(B2);
-    B3 = real(B3);
-    B4 = real(B4);
 end
 
 function [] = plotSenalesAntenas(B1,B2,B3,B4)
     %Funcion que realiza grafico de las funciones en 
     
         figure()
-        title('Señales en la estación base.')
         subplot(2,2,1);
         plot(B1)
         xlabel('Numero Muestra')
@@ -271,29 +332,25 @@ end
 function [] = plotOriginales(s1,s2,s3)
     %Funcion que realiza una grafica de las senales originales.
     
+    
+    %Variables globales.
+    global dAntenaskm c dt
+    %Tiempo total de la diagonal.
+    tDiagonal = ceil(sqrt(2) * dAntenaskm * 1000/(c*dt));
     %Punto a fijar la linea.
-    SP=1024;
+    SP=tDiagonal;
     
     figure()
     subplot(2,2,1)
     plot(s1)
-    title('Señal en persona 1 (Re)')
-    xlabel('Número de muestra')
-    ylabel('Amplitud')
     line([SP SP],[-1 2],'Color',[1 0 0])   
     
     subplot(2,2,2)
     plot(s2)
-    title('Señal en persona 2 (Re)')
-    xlabel('Número de muestra')
-    ylabel('Amplitud')
     line([SP SP],[-1 2],'Color',[1 0 0])   
     
     subplot(2,2,3)
     plot(s3)
-    title('Señal en persona 3 (Re)')
-    xlabel('Número de muestra')
-    ylabel('Amplitud')
     line([SP SP],[-1 2],'Color',[1 0 0])   
     
 end
