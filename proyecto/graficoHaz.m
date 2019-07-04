@@ -1,7 +1,7 @@
-function [] = graficoHaz(d,anguloInicialGrad,animacion,modo)
+function [] = graficoHaz(d,anguloInicialGrad,animacion,modo,params)
     %Realiza el grafico que permita determinar mediante simulacion el
     %angulo maximo tal que el rayo no salga de la fibra optica.
-    [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad,modo);
+    [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad,modo,params);
     count = 1;
     if (animacion ==1)
         for k = vecT

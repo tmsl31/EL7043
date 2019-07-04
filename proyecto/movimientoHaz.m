@@ -1,4 +1,4 @@
-function [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad,modo)
+function [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad,modo,params)
     %Funcion que realice el movimiento del haz en una fibra de longitud d (um).
     
     %Params:
@@ -28,8 +28,8 @@ function [vecX,vecY,vecT] = movimientoHaz(d,anguloInicialGrad,modo)
         vecX(count + 1) = dx;
         vecY(count + 1) = dy;
         %Calcular n1 y n2
-        n2 = indiceRefraccion(vecY(count + 1),modo);
-        n1 = (indiceRefraccion(vecY(count),modo) + n2)/2;
+        n2 = indiceRefraccion(vecY(count + 1),modo,params);
+        n1 = (indiceRefraccion(vecY(count),modo,params) + n2)/2;
         %Calcular el tiempo y agregar.
         v1 = c/n1;
         t1 = distanciaRecorrida/v1;

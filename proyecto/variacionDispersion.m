@@ -1,4 +1,4 @@
-function [dispersiones,tiemposT,tiemposT0,X,X0,Y,Y0] = variacionDispersion(vectorD,thetaInitGrados,modo)
+function [dispersiones,tiemposT,tiemposT0,X,X0,Y,Y0] = variacionDispersion(vectorD,thetaInitGrados,modo,params)
     %Datos para la obtencion del grafico de dispersion en funcion de la
     %distancia.
     
@@ -16,7 +16,7 @@ function [dispersiones,tiemposT,tiemposT0,X,X0,Y,Y0] = variacionDispersion(vecto
     count =1;
     for d = vectorD
         %Calculo de dispersion.
-       [dispersion,XYT,XYT0] = calculoDispersion(d,thetaInitGrados,modo);
+       [dispersion,XYT,XYT0] = calculoDispersion(d,thetaInitGrados,modo,params);
        %Agregar dispersion
        dispersiones(count) = dispersion; 
        %Agregar tiempos.
@@ -33,11 +33,11 @@ function [dispersiones,tiemposT,tiemposT0,X,X0,Y,Y0] = variacionDispersion(vecto
     end
 end
 
-function [dispersion,XYT,XYT0] = calculoDispersion(d,thetaInitGrados,modo)
+function [dispersion,XYT,XYT0] = calculoDispersion(d,thetaInitGrados,modo,params)
     %Funcion que calcule el valor de dispersión temporal entre dos haces.
     
-    [vecX,vecY,vecT] = movimientoHaz(d,thetaInitGrados,modo);
-    [vecX0,vecY0,vecT0] = movimientoHaz(d,0,modo);
+    [vecX,vecY,vecT] = movimientoHaz(d,thetaInitGrados,modo,params);
+    [vecX0,vecY0,vecT0] = movimientoHaz(d,0,modo,params);
     %El rayo curvo va mas rapido, por lo que pongo esto para que de
     %positivo.
     %Ultimos tiempos

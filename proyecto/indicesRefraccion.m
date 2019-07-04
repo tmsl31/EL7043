@@ -1,4 +1,4 @@
-function [ns] = indicesRefraccion(radios,modo)
+function [ns] = indicesRefraccion(radios,modo,params)
     %Calculo del indice de refraccion para varios radios.
     
     %Numero de radios.
@@ -11,7 +11,7 @@ function [ns] = indicesRefraccion(radios,modo)
         %Radio actual
         r = radios(count);
         %nActual
-        n = indiceRefraccion(r,modo);
+        n = indiceRefraccion(r,modo,params);
         %Agregar al vector de salida.
         ns(count) = n;
         %
