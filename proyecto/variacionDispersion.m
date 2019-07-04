@@ -31,14 +31,6 @@ function [dispersiones,tiemposT,tiemposT0,X,X0,Y,Y0] = variacionDispersion(vecto
        %
        count = count + 1;
     end
-    %Grafico.
-    figure()
-    hold on
-    plot(vectorD,dispersiones)
-    xlabel('Largo fibra (\mu m)')
-    ylabel('Dispersion (ms)')
-    title('Dispersion en función de la distancia')
-    hold off
 end
 
 function [dispersion,XYT,XYT0] = calculoDispersion(d,thetaInitGrados,modo)

@@ -5,21 +5,14 @@ function [variacion] = calculoVariaciones(vectorD,dispersiones,recta)
     %Obtencion de la variacion.
     variacion = dispersiones - recta;
     %Grafico 1: Ajuste de la curva.
-    figure()
-    hold on
-    plot(vectorD,recta)
-    plot(vectorD,dispersiones);
-    xlabel('Posicion X [\mu m]');
-    ylabel('Dispersion [ms]')
-    title('Curva de dispersión y recta ajustada')
-    hold off
-    %Grafico 2: Variaciones
-    figure()
-    hold on
-    plot(vectorD,variacion,'o-')
-    xlabel('Posicion X [\mu m]');
-    ylabel('Oscilacion dispersion [ms]')
-    title('Oscilacion de la dispersión')
-    hold off
+%     figure()
+%     hold on
+%     plot(vectorD,recta)
+%     plot(vectorD,dispersiones);
+%     xlabel('Posicion X [\mu m]');
+%     ylabel('Dispersion [ms]')
+%     title('Curva de dispersión y recta ajustada')
+%     hold off
+
 
 end
