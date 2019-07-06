@@ -11,9 +11,9 @@ function [area] = areaMinimizar(params)
     %Angulo de prueba (14.5 grados).
     anguloInicial = 14.5;
     %Vector de pruebas de distancia.
-    vectorD = linspace(1, 300,200);        
+    vectorD = linspace(0, 300,150);        
     %Obtencion de las dispersiones.  
-    [dispersiones,~,~,~,~] = variacionDispersion(vectorD,anguloInicial,2,params);
+    [dispersiones,~,~,~,~] = variacionDispersion(vectorD,anguloInicial,4,params);
     %Area de la curva de distancias y dispersiones.
     area = areaCurva(vectorD,dispersiones);
 end
